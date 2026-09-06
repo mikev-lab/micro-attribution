@@ -37,6 +37,11 @@
       "import": "./dist/transport.js",
       "require": "./dist/transport.cjs"
     },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js",
+      "require": "./dist/client.cjs"
+    },
     "./edge": {
       "types": "./dist/edge.d.ts",
       "import": "./dist/edge.js",

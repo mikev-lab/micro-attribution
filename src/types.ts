@@ -310,3 +310,106 @@ export interface RetrySchedule {
   delayMs: number;
 }
 
+/**
+ * Normalized campaign and attribution tracking metadata extracted from URL and referrer.
+ */
+export interface CampaignInfo {
+  /** Inferred marketing channel (e.g. 'organic_search', 'paid_search', 'social', 'direct', 'referral') */
+  channel: string;
+  /** Campaign source (e.g. 'google', 'newsletter', 'facebook') */
+  source?: string;
+  /** Campaign medium (e.g. 'cpc', 'email', 'organic', 'banner') */
+  medium?: string;
+  /** Campaign name */
+  campaign?: string;
+  /** Campaign search term or keyword */
+  term?: string;
+  /** Campaign content identifier for A/B testing */
+  content?: string;
+  /** Ad platform click identifier value (e.g. gclid, fbclid) */
+  clickId?: string;
+  /** Platform identifier type ('gclid', 'fbclid', 'msclkid', 'ttclid', etc.) */
+  clickIdType?: string;
+  /** Inbound document referrer URL */
+  referrer?: string;
+}
+
+/**
+ * Configuration options for initializing the MicroAttribution client SDK.
+ */
+export interface ClientOptions {
+  /** Target ingestion server endpoint URL */
+  endpoint: string;
+  /** Custom storage adapter (defaults to createAdaptiveStorage cascade: IDB -> LocalStorage -> Memory) */
+  storage?: StorageAdapter;
+  /** Maximum number of events to dispatch per network batch (default 50) */
+  batchSize?: number;
+  /** Draining interval in milliseconds when queue is non-empty (default 500 ms) */
+  batchIntervalMs?: number;
+  /** Base exponential backoff interval in milliseconds (default 1000 ms) */
+  baseBackoffMs?: number;
+  /** Maximum backoff ceiling in milliseconds (default 30000 ms) */
+  maxBackoffMs?: number;
+  /** Maximum consecutive retry attempts before pausing (default 10) */
+  maxRetries?: number;
+  /** Automatically record initial pageview on client init() (default true) */
+  autoCapturePageview?: boolean;
+  /** Automatically extract and attach campaign parameters from window location (default true) */
+  autoCaptureCampaign?: boolean;
+  /** Server-side or client pepper for daily salt visitor pseudonym hashing */
+  saltPepper?: string;
+  /** Client-side sample rate between 0.0 and 1.0 (default 1.0 = 100% telemetry capture) */
+  sampleRate?: number;
+  /** Additional HTTP headers attached to dispatch requests */
+  headers?: Record<string, string>;
+  /** Preferred transport mechanism ('beacon', 'keepalive', 'fetch') */
+  preferredTransport?: TransportType;
+  /** Enable diagnostic console logging */
+  debug?: boolean;
+}
+
+/**
+ * Request execution context captured by edge telemetry collectors.
+ */
+export interface EdgeContext {
+  /** Masked client subnet IP (/24 for IPv4 or /48 for IPv6) */
+  clientIp: string;
+  /** Client User-Agent string */
+  userAgent: string;
+  /** Inbound request origin hostname */
+  origin: string;
+  /** Ephemeral daily rotating visitor token */
+  visitorToken: string;
+  /** Ingestion timestamp in milliseconds */
+  timestamp: number;
+}
+
+/**
+ * Options for configuring edge request collector behavior.
+ */
+export interface EdgeCollectorOptions {
+  /** Allowed CORS origin string or validator function (default '*') */
+  corsOrigin?: string | ((origin: string) => boolean);
+  /** Master secret pepper for HMAC daily salt derivation */
+  pepper?: string;
+  /** Whether to truncate client IP addresses to /24 and /48 subnets (default true) */
+  anonymizeIp?: boolean;
+  /** Whether to apply deep recursive PII sanitization to incoming event payloads (default true) */
+  sanitizePayloads?: boolean;
+  /** Asynchronous batch persistence hook (e.g. database insert, queue forwarding, or MTA pipeline) */
+  onBatch?: (events: QueuedEvent[], context: EdgeContext) => Promise<void> | void;
+}
+
+/**
+ * Standard edge collector response structure.
+ */
+export interface IngestResult {
+  /** Whether the batch ingestion was accepted */
+  success: boolean;
+  /** Number of events processed and ingested */
+  count: number;
+  /** Error or diagnostic message if applicable */
+  message?: string;
+}
+
+

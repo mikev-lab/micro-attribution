@@ -87,3 +87,5 @@ export class MonotonicClock {
 
 /** Global default clock singleton instance */
 export const defaultClock = new MonotonicClock();
+export const clock = defaultClock;
+
