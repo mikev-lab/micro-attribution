@@ -202,6 +202,13 @@ export class EventQueue {
   }
 
   /**
+   * Alias for size(): returns total count of queued events currently stored.
+   */
+  public async count(): Promise<number> {
+    return this.size();
+  }
+
+  /**
    * Returns the current estimated byte size of all queued payloads.
    */
   public getByteSize(): number {

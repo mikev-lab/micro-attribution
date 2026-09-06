@@ -20,6 +20,7 @@ export default defineConfig([
       privacy: "src/privacy/index.ts",
       storage: "src/storage/index.ts",
       queue: "src/queue/index.ts",
+      transport: "src/transport/index.ts",
       edge: "src/edge/index.ts"
     },
     format: ["esm", "cjs"],

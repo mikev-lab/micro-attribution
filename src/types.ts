@@ -240,3 +240,73 @@ export interface AdaptiveStorageOptions {
   localStorageKey?: string;
 }
 
+/**
+ * Transport protocol utilized to transmit telemetry payloads.
+ * - 'beacon': Non-blocking browser daemon delivery via navigator.sendBeacon.
+ * - 'keepalive': Asynchronous fetch with { keepalive: true } lifecycle survival.
+ * - 'fetch': Standard HTTP POST via standard fetch API.
+ */
+export type TransportType = "beacon" | "keepalive" | "fetch";
+
+/**
+ * Options for transmitting a batch of events across the network.
+ */
+export interface TransmitOptions {
+  /** Additional HTTP headers to include with the request */
+  headers?: Record<string, string>;
+  /** Preferred transport mechanism (auto-negotiates if omitted or unavailable) */
+  preferredTransport?: TransportType;
+}
+
+/**
+ * Detailed result of a batch network transmission.
+ */
+export interface DispatchResult {
+  /** Whether the transmission was acknowledged by the server */
+  success: boolean;
+  /** The transport mechanism utilized for the dispatch */
+  transport: TransportType;
+  /** Number of events included in the dispatched batch */
+  sentCount: number;
+  /** HTTP response status code (e.g. 200, 429, 500) if available */
+  status?: number;
+  /** Error encountered during transmission if unsuccessful */
+  error?: Error;
+}
+
+/**
+ * Options for configuring NetworkDispatcher behavior and intervals.
+ */
+export interface DispatcherOptions {
+  /** Ingestion server endpoint URL */
+  endpoint: string;
+  /** Maximum number of events to dispatch per batch (default 50) */
+  batchSize?: number;
+  /** Draining interval in milliseconds when queue is non-empty (default 500 ms) */
+  batchIntervalMs?: number;
+  /** Base exponential backoff interval in milliseconds (default 1000 ms) */
+  baseBackoffMs?: number;
+  /** Maximum backoff ceiling in milliseconds (default 30000 ms) */
+  maxBackoffMs?: number;
+  /** Maximum consecutive retry attempts before dropping or pausing (default 10) */
+  maxRetries?: number;
+  /** Additional HTTP headers to attach to every outgoing request */
+  headers?: Record<string, string>;
+  /** Preferred transport mechanism */
+  preferredTransport?: TransportType;
+  /** Optional callback invoked upon successful batch dispatch */
+  onSuccess?: (result: DispatchResult) => void;
+  /** Optional callback invoked upon failed batch dispatch */
+  onError?: (error: Error, status?: number) => void;
+}
+
+/**
+ * Computed retry delay parameters.
+ */
+export interface RetrySchedule {
+  /** Current 0-indexed retry attempt count */
+  attempt: number;
+  /** Computed sleep interval in milliseconds including randomized jitter */
+  delayMs: number;
+}
+

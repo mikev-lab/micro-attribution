@@ -32,6 +32,11 @@
       "import": "./dist/queue.js",
       "require": "./dist/queue.cjs"
     },
+    "./transport": {
+      "types": "./dist/transport.d.ts",
+      "import": "./dist/transport.js",
+      "require": "./dist/transport.cjs"
+    },
     "./edge": {
       "types": "./dist/edge.d.ts",
       "import": "./dist/edge.js",
