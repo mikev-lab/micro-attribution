@@ -138,3 +138,105 @@ export interface SanitizerOptions {
   /** Maximum traversal depth for nested objects and arrays to prevent recursion overflow */
   maxDepth?: number;
 }
+
+/**
+ * Priority tier for queued telemetry events.
+ * High priority events (conversions, purchases, revenue) are preserved during backpressure eviction.
+ */
+export type EventPriority = "high" | "normal";
+
+/**
+ * Storage tier identifier.
+ */
+export type StorageTier = "indexeddb" | "localstorage" | "memory";
+
+/**
+ * Represents a durable telemetry record enqueued for dispatch.
+ */
+export interface QueuedEvent<T = Record<string, unknown>> {
+  /** Unique monotonic event record identifier */
+  id: string;
+  /** Monotonic millisecond timestamp */
+  timestamp: number;
+  /** Eviction priority level ('high' or 'normal') */
+  priority: EventPriority;
+  /** Estimated serialized payload size in bytes */
+  byteSize: number;
+  /** Telemetry payload data */
+  payload: T;
+  /** Number of dispatch retry attempts */
+  retryCount?: number;
+}
+
+/**
+ * Common asynchronous CRUD contract implemented by all storage adapters.
+ */
+export interface StorageAdapter {
+  /** Name of the underlying storage tier */
+  readonly tier: StorageTier;
+  /** Initialize database connections or storage structures */
+  init(): Promise<void>;
+  /** Retrieve a single event by ID */
+  get(id: string): Promise<QueuedEvent | null>;
+  /** Insert or update an event in storage */
+  set(event: QueuedEvent): Promise<void>;
+  /** Delete a single event by ID */
+  delete(id: string): Promise<void>;
+  /** Batch delete multiple events by ID */
+  deleteMany(ids: string[]): Promise<void>;
+  /** Peek at the oldest queued events up to limit without removing */
+  peek(limit?: number): Promise<QueuedEvent[]>;
+  /** Get total count of queued events */
+  count(): Promise<number>;
+  /** Clear all events from storage */
+  clear(): Promise<void>;
+  /** Check if the storage engine is currently available and functional */
+  isAvailable(): Promise<boolean>;
+  /** Close any active database connections or handles */
+  close?(): Promise<void>;
+}
+
+/**
+ * Options for configuring EventQueue backpressure and eviction limits.
+ */
+export interface EventQueueOptions {
+  /** Maximum number of records before backpressure eviction triggers (default 1000) */
+  maxEvents?: number;
+  /** Maximum queue payload size in bytes before eviction triggers (default 2097152 = 2MB) */
+  maxByteSize?: number;
+  /** Custom storage adapter instance (defaults to adaptive storage factory) */
+  storage?: StorageAdapter;
+  /** Optional callback triggered when an event is dropped due to queue saturation */
+  onDrop?: (event: QueuedEvent, reason: "count_limit" | "byte_limit") => void;
+}
+
+/**
+ * Runtime telemetry metrics for EventQueue.
+ */
+export interface QueueStats {
+  /** Current total number of queued events */
+  eventCount: number;
+  /** Estimated cumulative byte size of queued payloads */
+  byteSize: number;
+  /** Number of high-priority events currently queued */
+  highPriorityCount: number;
+  /** Cumulative count of events dropped due to backpressure since queue creation */
+  droppedCount: number;
+  /** Active storage tier name */
+  storageTier: StorageTier;
+}
+
+/**
+ * Configuration options for the adaptive storage factory.
+ */
+export interface AdaptiveStorageOptions {
+  /** Explicitly prefer or force a specific storage tier */
+  preferredTier?: StorageTier;
+  /** Custom IndexedDB database name (default '__micro_attr_db') */
+  dbName?: string;
+  /** Custom IndexedDB object store name (default 'event_queue') */
+  storeName?: string;
+  /** Custom localStorage key (default '__micro_attr_queue__') */
+  localStorageKey?: string;
+}
+

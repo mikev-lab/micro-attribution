@@ -57,6 +57,22 @@ jobs:
             exit 1
           fi
 
+          gzip -c dist/storage.js > dist/storage.js.gz
+          STOR_SIZE=$(wc -c < dist/storage.js.gz | tr -d ' ')
+          echo "Storage Module gzip size: ${STOR_SIZE} bytes"
+          if [ "$STOR_SIZE" -gt 2560 ]; then
+            echo "ERROR: Storage bundle budget exceeded (max 2560 bytes, current ${STOR_SIZE} bytes)"
+            exit 1
+          fi
+
+          gzip -c dist/queue.js > dist/queue.js.gz
+          QUEUE_SIZE=$(wc -c < dist/queue.js.gz | tr -d ' ')
+          echo "Queue Module gzip size: ${QUEUE_SIZE} bytes"
+          if [ "$QUEUE_SIZE" -gt 2560 ]; then
+            echo "ERROR: Queue bundle budget exceeded (max 2560 bytes, current ${QUEUE_SIZE} bytes)"
+            exit 1
+          fi
+
       - name: Create GitHub Release & Upload Artifacts
         uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
@@ -73,6 +89,12 @@ jobs:
             dist/privacy.js
             dist/privacy.cjs
             dist/privacy.d.ts
+            dist/storage.js
+            dist/storage.cjs
+            dist/storage.d.ts
+            dist/queue.js
+            dist/queue.cjs
+            dist/queue.d.ts
           generate_release_notes: true
 
       - name: Publish to NPM Registry

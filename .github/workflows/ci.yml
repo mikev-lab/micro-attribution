@@ -53,3 +53,19 @@ jobs:
             echo "ERROR: Privacy bundle budget exceeded (max 2560 bytes, current ${PRIV_SIZE} bytes)"
             exit 1
           fi
+
+          gzip -c dist/storage.js > dist/storage.js.gz
+          STOR_SIZE=$(wc -c < dist/storage.js.gz | tr -d ' ')
+          echo "Storage Module gzip size: ${STOR_SIZE} bytes"
+          if [ "$STOR_SIZE" -gt 2560 ]; then
+            echo "ERROR: Storage bundle budget exceeded (max 2560 bytes, current ${STOR_SIZE} bytes)"
+            exit 1
+          fi
+
+          gzip -c dist/queue.js > dist/queue.js.gz
+          QUEUE_SIZE=$(wc -c < dist/queue.js.gz | tr -d ' ')
+          echo "Queue Module gzip size: ${QUEUE_SIZE} bytes"
+          if [ "$QUEUE_SIZE" -gt 2560 ]; then
+            echo "ERROR: Queue bundle budget exceeded (max 2560 bytes, current ${QUEUE_SIZE} bytes)"
+            exit 1
+          fi

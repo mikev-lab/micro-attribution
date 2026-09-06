@@ -22,6 +22,16 @@
       "import": "./dist/privacy.js",
       "require": "./dist/privacy.cjs"
     },
+    "./storage": {
+      "types": "./dist/storage.d.ts",
+      "import": "./dist/storage.js",
+      "require": "./dist/storage.cjs"
+    },
+    "./queue": {
+      "types": "./dist/queue.d.ts",
+      "import": "./dist/queue.js",
+      "require": "./dist/queue.cjs"
+    },
     "./edge": {
       "types": "./dist/edge.d.ts",
       "import": "./dist/edge.js",

@@ -18,6 +18,8 @@ export default defineConfig([
     entry: {
       attribution: "src/attribution/index.ts",
       privacy: "src/privacy/index.ts",
+      storage: "src/storage/index.ts",
+      queue: "src/queue/index.ts",
       edge: "src/edge/index.ts"
     },
     format: ["esm", "cjs"],
