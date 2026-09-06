@@ -69,3 +69,19 @@ jobs:
             echo "ERROR: Queue bundle budget exceeded (max 2560 bytes, current ${QUEUE_SIZE} bytes)"
             exit 1
           fi
+
+          gzip -c dist/transport.js > dist/transport.js.gz
+          TRANS_SIZE=$(wc -c < dist/transport.js.gz | tr -d ' ')
+          echo "Transport Module gzip size: ${TRANS_SIZE} bytes"
+          if [ "$TRANS_SIZE" -gt 2560 ]; then
+            echo "ERROR: Transport bundle budget exceeded (max 2560 bytes, current ${TRANS_SIZE} bytes)"
+            exit 1
+          fi
+
+          gzip -c dist/edge.js > dist/edge.js.gz
+          EDGE_SIZE=$(wc -c < dist/edge.js.gz | tr -d ' ')
+          echo "Edge Module gzip size: ${EDGE_SIZE} bytes"
+          if [ "$EDGE_SIZE" -gt 2560 ]; then
+            echo "ERROR: Edge bundle budget exceeded (max 2560 bytes, current ${EDGE_SIZE} bytes)"
+            exit 1
+          fi

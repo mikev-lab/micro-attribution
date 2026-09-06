@@ -73,6 +73,22 @@ jobs:
             exit 1
           fi
 
+          gzip -c dist/transport.js > dist/transport.js.gz
+          TRANS_SIZE=$(wc -c < dist/transport.js.gz | tr -d ' ')
+          echo "Transport Module gzip size: ${TRANS_SIZE} bytes"
+          if [ "$TRANS_SIZE" -gt 2560 ]; then
+            echo "ERROR: Transport bundle budget exceeded (max 2560 bytes, current ${TRANS_SIZE} bytes)"
+            exit 1
+          fi
+
+          gzip -c dist/edge.js > dist/edge.js.gz
+          EDGE_SIZE=$(wc -c < dist/edge.js.gz | tr -d ' ')
+          echo "Edge Module gzip size: ${EDGE_SIZE} bytes"
+          if [ "$EDGE_SIZE" -gt 2560 ]; then
+            echo "ERROR: Edge bundle budget exceeded (max 2560 bytes, current ${EDGE_SIZE} bytes)"
+            exit 1
+          fi
+
       - name: Create GitHub Release & Upload Artifacts
         uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
@@ -83,6 +99,12 @@ jobs:
             dist/index.js
             dist/index.cjs
             dist/index.d.ts
+            dist/client.js
+            dist/client.cjs
+            dist/client.d.ts
+            dist/edge.js
+            dist/edge.cjs
+            dist/edge.d.ts
             dist/attribution.js
             dist/attribution.cjs
             dist/attribution.d.ts
@@ -95,6 +117,9 @@ jobs:
             dist/queue.js
             dist/queue.cjs
             dist/queue.d.ts
+            dist/transport.js
+            dist/transport.cjs
+            dist/transport.d.ts
           generate_release_notes: true
 
       - name: Publish to NPM Registry
