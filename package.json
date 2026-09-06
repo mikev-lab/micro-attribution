@@ -36,7 +36,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "build": "tsup",
-    "test:compliance": "node -e \"if (require('fs').existsSync('.agents/tests/compliance.test.ts')) { require('child_process').execSync('npx vitest run .agents/tests/compliance.test.ts', { stdio: 'inherit' }); } else { console.log('Agent governance is stealth-shielded (.agents not present). Skipping.'); }\""
+    "test:compliance": "vitest run .agents/tests/compliance.test.ts"
   },
   "keywords": [
     "telemetry",
