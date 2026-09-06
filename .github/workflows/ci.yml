@@ -27,11 +27,24 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Typecheck
+      - name: Verify Governance Compliance
+        run: npm run test:compliance
+
+      - name: Strict Typecheck
         run: npm run typecheck
 
-      - name: Unit & Integration Tests
+      - name: Comprehensive Unit & Integration Tests
         run: npm test
 
       - name: Production Bundle Build
         run: npm run build
+
+      - name: Verify Bundle Budget (< 2.5 KB min+gzip)
+        run: |
+          gzip -c dist/index.global.js > dist/index.global.js.gz
+          SIZE=$(wc -c < dist/index.global.js.gz | tr -d ' ')
+          echo "Client Core IIFE gzip size: ${SIZE} bytes"
+          if [ "$SIZE" -gt 2560 ]; then
+            echo "ERROR: Bundle budget exceeded (max 2560 bytes, current ${SIZE} bytes)"
+            exit 1
+          fi

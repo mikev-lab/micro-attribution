@@ -1,0 +1,76 @@
+name: Deploy & Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  validate-and-release:
+    name: Validate, Package & Publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js (v22.x LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Verify Governance Compliance
+        run: npm run test:compliance
+
+      - name: Strict Typecheck
+        run: npm run typecheck
+
+      - name: Execute Full Test Suite
+        run: npm test
+
+      - name: Build Production Distributions (ESM, CJS, IIFE)
+        run: npm run build
+
+      - name: Verify Bundle Size Budget (< 2.5 KB min+gzip)
+        run: |
+          gzip -c dist/index.global.js > dist/index.global.js.gz
+          SIZE=$(wc -c < dist/index.global.js.gz | tr -d ' ')
+          echo "Client Core IIFE gzip size: ${SIZE} bytes"
+          if [ "$SIZE" -gt 2560 ]; then
+            echo "ERROR: Bundle budget exceeded (max 2560 bytes, current ${SIZE} bytes)"
+            exit 1
+          fi
+
+      - name: Create GitHub Release & Upload Artifacts
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            dist/index.global.js
+            dist/index.global.js.map
+            dist/index.js
+            dist/index.cjs
+            dist/index.d.ts
+          generate_release_notes: true
+
+      - name: Publish to NPM Registry
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "${NODE_AUTH_TOKEN}" ]; then
+            npm publish --provenance --access public
+          else
+            echo "NPM_TOKEN not configured; skipping npm publish."
+          fi
