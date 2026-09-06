@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MicroAttribution: Interactive Attribution & Telemetry Playground</title>
+  <meta name="description" content="Zero-dependency, offline-resilient client and edge telemetry library for privacy-preserving conversion attribution. Live interactive simulation playground.">
+
+  <!-- Google Fonts: Inter and JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Navigation & Branding -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-area">
+        <span class="logo-badge">&mu;A</span>
+        <div>
+          <h1 class="brand-title">micro-attribution</h1>
+          <p class="brand-subtitle">Interactive Attribution & Telemetry Playground</p>
+        </div>
+      </div>
+
+      <div class="header-meta">
+        <span class="meta-pill highlight">0 Dependencies</span>
+        <span class="meta-pill">&lt; 2.5 KB Core</span>
+        <span class="meta-pill">Cookieless</span>
+        <span class="meta-pill">ePrivacy Exempt</span>
+        <div class="header-links" style="margin-left: 0.5rem;">
+          <a href="https://github.com/mikev-lab/micro-attribution" target="_blank" rel="noopener">GitHub Repository &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Layout -->
+  <main class="main-container">
+
+    <div class="dashboard-grid">
+
+      <!-- LEFT COLUMN: Simulator & Queue Controls -->
+      <div class="column-left">
+
+        <!-- Card 1: Customer Journey Simulator -->
+        <section class="glass-card" id="journeySimulatorCard">
+          <div class="card-header">
+            <h2 class="card-title">
+              <span>Customer Journey Simulator</span>
+            </h2>
+            <span class="card-badge">Touchpoint Injection</span>
+          </div>
+
+          <!-- Scenario Presets -->
+          <div class="preset-bar">
+            <button class="btn-preset" data-preset="ecommerce" id="presetEcommerce">Preset: E-Commerce Funnel</button>
+            <button class="btn-preset" data-preset="b2b" id="presetB2b">Preset: B2B Enterprise</button>
+            <button class="btn-preset" data-preset="flash" id="presetFlash">Preset: Flash Sale</button>
+          </div>
+
+          <!-- Touchpoint Injection Buttons -->
+          <div class="button-grid">
+            <button class="btn-touchpoint" data-channel="organic_search" data-label="Google Organic" id="btnOrganic">
+              <span>+ Organic Search</span>
+              <span class="cost">Unpaid organic</span>
+            </button>
+            <button class="btn-touchpoint" data-channel="paid_search" data-label="Google Ads ($2.50 CPC)" id="btnPaidSearch">
+              <span>+ Google Ads</span>
+              <span class="cost">$2.50 CPC</span>
+            </button>
+            <button class="btn-touchpoint" data-channel="social" data-label="TikTok Ad ($1.20 CPC)" id="btnSocial">
+              <span>+ TikTok Ad</span>
+              <span class="cost">$1.20 CPC</span>
+            </button>
+            <button class="btn-touchpoint" data-channel="email" data-label="Email Newsletter" id="btnEmail">
+              <span>+ Newsletter</span>
+              <span class="cost">Retention email</span>
+            </button>
+            <button class="btn-touchpoint" data-channel="referral" data-label="Affiliate Partner" id="btnReferral">
+              <span>+ Referral Link</span>
+              <span class="cost">Partner referral</span>
+            </button>
+            <button class="btn-touchpoint" data-channel="direct" data-label="Direct URL Visit" id="btnDirect">
+              <span>+ Direct Visit</span>
+              <span class="cost">Type-in URL</span>
+            </button>
+          </div>
+
+          <!-- Conversion Event Trigger -->
+          <div class="conversion-bar">
+            <div class="conversion-input-group">
+              <label for="conversionAmount">Value ($):</label>
+              <input type="number" id="conversionAmount" class="conversion-input" value="250.00" step="10" min="1">
+            </div>
+            <div class="conversion-input-group">
+              <label for="conversionName">Goal:</label>
+              <input type="text" id="conversionName" class="conversion-input" value="purchase" style="width: 140px;">
+            </div>
+            <button class="btn-convert" id="btnConvert">Record Conversion</button>
+            <button class="btn-clear" id="btnClear" title="Clear customer journey">Clear</button>
+          </div>
+
+          <!-- Chronological Journey Timeline -->
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">
+            Active Journey Sequence
+          </div>
+          <div class="timeline-container" id="timelineList">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+
+        <!-- Card 2: Offline Resilience & Queue Inspector -->
+        <section class="glass-card" id="offlineQueueCard">
+          <div class="card-header">
+            <h2 class="card-title">
+              <span>Offline Queue &amp; Resilience</span>
+            </h2>
+            <span class="card-badge">Network &amp; Storage</span>
+          </div>
+
+          <!-- Network Online/Offline Toggle -->
+          <div class="network-toggle-wrapper">
+            <div class="toggle-label-group">
+              <span class="status-dot" id="statusDot"></span>
+              <div>
+                <div style="font-size: 0.8125rem; font-weight: 600;">Simulate Network State</div>
+                <div style="font-size: 0.6875rem; color: var(--text-muted);">Toggle to buffer events in IndexedDB</div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="networkSwitch" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Real-Time Metrics -->
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-label">Network Status</div>
+              <div class="stat-value online" id="statOnline">ONLINE</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Queued Events</div>
+              <div class="stat-value" id="statQueueCount">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">High Priority</div>
+              <div class="stat-value" id="statHighPriority">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Storage Tier</div>
+              <div class="stat-value" id="statStorageTier" style="font-size: 1rem;">IndexedDB</div>
+            </div>
+          </div>
+
+          <!-- Queue Control Buttons -->
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+            <button class="btn-preset" id="btnFlushQueue">Flush Queue Now</button>
+            <button class="btn-preset" id="btnInjectBatch">Inject 50 Events (Test Backpressure)</button>
+          </div>
+
+          <!-- Live Activity Console -->
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">
+            Dispatcher Event Stream
+          </div>
+          <div class="console-box" id="consoleBox">
+            <!-- Activity log lines dynamically appended -->
+          </div>
+        </section>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Attribution Math & Privacy Sandbox -->
+      <div class="column-right">
+
+        <!-- Card 3: Live Multi-Touch Attribution Engine -->
+        <section class="glass-card" id="attributionEngineCard">
+          <div class="card-header">
+            <h2 class="card-title">
+              <span>Live Multi-Touch Attribution Engine</span>
+            </h2>
+            <span class="card-badge" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border-color: rgba(16, 185, 129, 0.3);">
+              Value Preserved &Sigma; = V
+            </span>
+          </div>
+
+          <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Calculates 7 distinct attribution models concurrently across the active journey using real floating-point mathematics and absorbing Markov chain matrices.
+          </p>
+
+          <!-- Attribution Comparison Table -->
+          <div class="attribution-table-wrapper">
+            <table class="attribution-table">
+              <thead>
+                <tr>
+                  <th>Channel</th>
+                  <th>First-Touch</th>
+                  <th>Last-Touch</th>
+                  <th>Last Non-Direct</th>
+                  <th>Linear</th>
+                  <th>Time-Decay (7d)</th>
+                  <th>U-Shaped (40/20/40)</th>
+                  <th>Markov Chain</th>
+                </tr>
+              </thead>
+              <tbody id="attributionTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Proportional Visual Bar Chart Comparison -->
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">
+            Credit Distribution by Attribution Model
+          </div>
+          <div class="chart-container" id="chartContainer">
+            <!-- Dynamically populated visual bars -->
+          </div>
+        </section>
+
+        <!-- Card 4: Statutory Privacy & Redaction Sandbox -->
+        <section class="glass-card" id="privacySandboxCard">
+          <div class="card-header">
+            <h2 class="card-title">
+              <span>Statutory Privacy &amp; Sanitization Sandbox</span>
+            </h2>
+            <span class="card-badge" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); border-color: rgba(6, 182, 212, 0.3);">
+              GDPR &bull; ePrivacy &bull; CCPA
+            </span>
+          </div>
+
+          <!-- Subnet Masking Playground -->
+          <div class="inspector-group">
+            <label class="inspector-label" for="ipInput">Client IP Subnet Truncation (/24 IPv4, /48 IPv6):</label>
+            <input type="text" id="ipInput" class="inspector-input" value="198.51.100.42">
+            <div class="inspector-output" id="ipOutput">Masked Subnet: 198.51.100.0 (/24 IPv4)</div>
+          </div>
+
+          <!-- Recursive PII Sanitizer -->
+          <div class="inspector-group">
+            <label class="inspector-label" for="urlInput">URL &amp; Query String PII Redactor:</label>
+            <input type="text" id="urlInput" class="inspector-input" value="https://store.com/checkout?utm_source=google&email=john.smith@gmail.com&card=4111-2222-3333-4444">
+            <div class="inspector-output" id="urlOutput">Scrubbed URL: https://store.com/checkout?utm_source=google&email=[REDACTED]&card=[REDACTED]</div>
+          </div>
+
+          <!-- Daily Ephemeral Rotating Salt -->
+          <div class="inspector-group">
+            <label class="inspector-label">Daily Ephemeral Rotating Salt &amp; Visitor Pseudonym (SHA-256):</label>
+            <div class="inspector-output" id="saltEpoch" style="margin-bottom: 0.3rem;">UTC Day Index: ...</div>
+            <div class="inspector-output" id="saltHex" style="margin-bottom: 0.3rem;">Salt: ...</div>
+            <div class="inspector-output" id="visitorToken">Visitor Token: ...</div>
+          </div>
+
+          <!-- Secondary Redundancy Status Indicators -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 1rem;">
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.6rem 0.8rem;">
+              <div style="font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase;">Secondary Failover</div>
+              <div style="font-size: 0.8125rem; font-weight: 600; color: var(--accent-emerald);">Standby (Auto 5xx Failover)</div>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.6rem 0.8rem;">
+              <div style="font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase;">GA4 Dual-Dispatch</div>
+              <div style="font-size: 0.8125rem; font-weight: 600; color: var(--accent-cyan);">Measurement Protocol (/mp/collect)</div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Load Global Compiled Library Bundle -->
+  <script src="dist/index.global.js"></script>
+
+  <!-- Load Interactive Simulation Script -->
+  <script src="playground.js"></script>
+
+</body>
+</html>

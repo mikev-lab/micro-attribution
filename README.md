@@ -7,7 +7,8 @@
 [![Zero Runtime Dependencies](https://img.shields.io/badge/dependencies-0-success.svg?style=flat-square)](package.json)
 [![Dual Runtime](https://img.shields.io/badge/runtime-Browser%20%7C%20Edge%20%7C%20Node-blue.svg?style=flat-square)](#dual-runtime-architecture)
 [![Bundle Size Budget](https://img.shields.io/badge/min%2Bgzip-%3C%202.5%20KB%20per%20module-brightgreen.svg?style=flat-square)](#verified-bundle-budget-metrics)
-[![Tests Passing](https://img.shields.io/badge/tests-198%20passed%20(100%25)-success.svg?style=flat-square)](tests/)
+[![Tests Passing](https://img.shields.io/badge/tests-218%20passed%20(100%25)-success.svg?style=flat-square)](tests/)
+[![Live Demo Playground](https://img.shields.io/badge/live%20demo-interactive%20playground-blueviolet.svg?style=flat-square)](https://mikev-lab.github.io/micro-attribution/)
 [![TypeScript Strict](https://img.shields.io/badge/typescript-strict%20mode-blue.svg?style=flat-square)](tsconfig.json)
 [![Statutory Privacy](https://img.shields.io/badge/privacy-GDPR%20%7C%20CCPA%20%7C%20ePrivacy-orange.svg?style=flat-square)](#statutory-privacy--regulatory-compliance)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
@@ -17,7 +18,7 @@
   Combines sub-pixel monotonic event capture, an adaptive offline storage cascade, jittered backoff delivery, and real-time multi-touch attribution (MTA) mathematics.
 </p>
 
-[Quickstart](#quickstart-guide) • [Architecture](#system-architecture--data-flow) • [Attribution Models](#attribution-models--mathematics) • [Customization](#customization--extensibility) • [ePrivacy Compliance](#statutory-privacy--regulatory-compliance) • [API Reference](docs/API_REFERENCE.md) • [Framework Integrations](docs/FRAMEWORK_INTEGRATIONS.md)
+[Interactive Playground](https://mikev-lab.github.io/micro-attribution/) • [Quickstart](#quickstart-guide) • [Architecture](#system-architecture--data-flow) • [Attribution Models](#attribution-models--mathematics) • [Customization](#customization--extensibility) • [ePrivacy Compliance](#statutory-privacy--regulatory-compliance) • [API Reference](docs/API_REFERENCE.md) • [Framework Integrations](docs/FRAMEWORK_INTEGRATIONS.md)
 
 ---
 
@@ -26,6 +27,7 @@
 ## Table of Contents
 
 - [Overview](#overview)
+- [Interactive Demo Playground](#interactive-demo-playground)
 - [Comparative Analysis](#comparative-analysis)
 - [System Architecture & Data Flow](#system-architecture--data-flow)
 - [Verified Bundle Budget Metrics](#verified-bundle-budget-metrics)
@@ -35,6 +37,7 @@
   - [3. Multi-Touch Attribution Engine](#3-multi-touch-attribution-engine)
 - [Customization & Extensibility](#customization--extensibility)
   - [Custom Event Taxonomy & Ecommerce Funnels](#custom-event-taxonomy--ecommerce-funnels)
+  - [Conversion Redundancy & GA4 Dual-Dispatch](#conversion-redundancy--ga4-dual-dispatch)
   - [Zero-Storage Mode for Strict ePrivacy Exemption](#zero-storage-mode-for-strict-eprivacy-exemption)
   - [Custom Parametric Attribution Models](#custom-parametric-attribution-models)
   - [Edge Ingestion Enrichment & Destinations](#edge-ingestion-enrichment--destinations)
@@ -61,6 +64,22 @@ Most analytics libraries carry dozens of kilobytes of third-party dependencies, 
 - **Unload Survival**: Modern lifecycle listeners bound to `visibilitychange` and `pagehide` ensuring 100% bfcache compatibility and zero event loss on mobile app backgrounding or desktop tab closure.
 - **Statutory Privacy by Design**: Cookieless sessionization, daily rotating salt tokenization, IPv4/IPv6 subnet masking, and deep recursive PII redaction.
 - **Native MTA Calculation**: Single-Touch, Heuristic Multi-Touch (Linear, Time-Decay, Position-Based), and algorithmic discrete-time absorbing Markov Chains with Removal Effect scoring.
+- **Zero-Dependency GA4 Bridge**: Direct HTTP dual-dispatch to Google Analytics 4 Measurement Protocol (`/mp/collect`) for financial conversion redundancy without loading Google `gtag.js` scripts.
+- **Automatic Endpoint Failover**: Secondary fallback ingestion URL failover for high-availability enterprise pipelines.
+
+---
+
+## Interactive Demo Playground
+
+Experience `micro-attribution` in real time without installing dependencies or setting up servers. The live interactive simulation playground runs 100% in your browser:
+
+**Launch the Live Playground**: [https://mikev-lab.github.io/micro-attribution/](https://mikev-lab.github.io/micro-attribution/)
+
+Playground Features:
+- **Customer Journey Simulator**: Build custom multi-channel touchpoint journeys and trigger conversion events.
+- **Live Multi-Touch Attribution Engine**: Compare credit allocations across First-Touch, Last-Touch, Linear, Time-Decay, U-Shaped, and Markov Chain removal effects.
+- **Offline & Storage Inspector**: Toggle network status to simulate offline buffering, watch IndexedDB priority backpressure in real time, and observe automatic jittered batch draining upon reconnection.
+- **Privacy & Sanitization Sandbox**: Type client IP addresses and query strings to watch real-time /24 subnet masking, PII scrubbing, and SHA-256 daily rotating salt tokenization.
 
 ---
 
