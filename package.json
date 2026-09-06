@@ -1,0 +1,57 @@
+{
+  "name": "micro-attribution",
+  "version": "0.1.0",
+  "description": "Zero-dependency, offline-resilient client and edge telemetry library for privacy-preserving conversion attribution.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./attribution": {
+      "types": "./dist/attribution.d.ts",
+      "import": "./dist/attribution.js",
+      "require": "./dist/attribution.cjs"
+    },
+    "./edge": {
+      "types": "./dist/edge.d.ts",
+      "import": "./dist/edge.js",
+      "require": "./dist/edge.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "build": "tsup",
+    "test:compliance": "vitest run .agents/tests/compliance.test.ts"
+  },
+  "keywords": [
+    "telemetry",
+    "attribution",
+    "multi-touch-attribution",
+    "analytics",
+    "cookieless",
+    "privacy",
+    "offline-first",
+    "indexeddb",
+    "zero-dependency",
+    "edge"
+  ],
+  "author": "Mike Valente",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7"
+  }
+}
