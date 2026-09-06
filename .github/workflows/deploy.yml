@@ -42,13 +42,21 @@ jobs:
       - name: Build Production Distributions (ESM, CJS, IIFE)
         run: npm run build
 
-      - name: Verify Bundle Size Budget (< 2.5 KB min+gzip)
+      - name: Verify Modular Bundle Budgets (< 2.5 KB min+gzip per module)
         run: |
-          gzip -c dist/index.global.js > dist/index.global.js.gz
-          SIZE=$(wc -c < dist/index.global.js.gz | tr -d ' ')
-          echo "Client Core IIFE gzip size: ${SIZE} bytes"
-          if [ "$SIZE" -gt 2560 ]; then
-            echo "ERROR: Bundle budget exceeded (max 2560 bytes, current ${SIZE} bytes)"
+          gzip -c dist/attribution.js > dist/attribution.js.gz
+          ATTR_SIZE=$(wc -c < dist/attribution.js.gz | tr -d ' ')
+          echo "Attribution Module gzip size: ${ATTR_SIZE} bytes"
+          if [ "$ATTR_SIZE" -gt 2560 ]; then
+            echo "ERROR: Attribution bundle budget exceeded (max 2560 bytes, current ${ATTR_SIZE} bytes)"
+            exit 1
+          fi
+
+          gzip -c dist/privacy.js > dist/privacy.js.gz
+          PRIV_SIZE=$(wc -c < dist/privacy.js.gz | tr -d ' ')
+          echo "Privacy Module gzip size: ${PRIV_SIZE} bytes"
+          if [ "$PRIV_SIZE" -gt 2560 ]; then
+            echo "ERROR: Privacy bundle budget exceeded (max 2560 bytes, current ${PRIV_SIZE} bytes)"
             exit 1
           fi
 
@@ -62,6 +70,12 @@ jobs:
             dist/index.js
             dist/index.cjs
             dist/index.d.ts
+            dist/attribution.js
+            dist/attribution.cjs
+            dist/attribution.d.ts
+            dist/privacy.js
+            dist/privacy.cjs
+            dist/privacy.d.ts
           generate_release_notes: true
 
       - name: Publish to NPM Registry

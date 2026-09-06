@@ -108,3 +108,33 @@ export interface MarkovAttributionResult extends AttributionResult {
   baselineConversionProbability: number;
   removalEffects: Record<string, ChannelRemovalEffect>;
 }
+
+/**
+ * Options for generating ephemeral daily visitor pseudonym tokens.
+ */
+export interface VisitorTokenOptions {
+  /** Client IP address (automatically truncated to /24 or /48 prefix) */
+  ip?: string;
+  /** Client User-Agent string (will be normalized) */
+  userAgent?: string;
+  /** First-party origin or application hostname */
+  origin?: string;
+  /** Explicit reference date for daily epoch calculation (defaults to current date) */
+  date?: Date;
+  /** Optional server-side master secret pepper for HMAC keying */
+  pepper?: string;
+}
+
+/**
+ * Configuration options for PII scrubbing and payload sanitization.
+ */
+export interface SanitizerOptions {
+  /** Additional custom parameter or key names to denylist */
+  additionalDenylist?: string[];
+  /** Replacement placeholder mask for redacted sensitive patterns (default '[REDACTED]') */
+  redactionMask?: string;
+  /** Handling behavior for denylisted keys: 'drop' deletes key, 'mask' replaces value */
+  denylistAction?: "drop" | "mask";
+  /** Maximum traversal depth for nested objects and arrays to prevent recursion overflow */
+  maxDepth?: number;
+}
