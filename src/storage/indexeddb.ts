@@ -78,7 +78,12 @@ export class IndexedDBAdapter implements StorageAdapter {
         const request = store.get(id);
 
         request.onsuccess = () => {
-          resolve(request.result || null);
+          const res = request.result;
+          if (res && typeof res === "object" && typeof res.id === "string") {
+            resolve(res);
+          } else {
+            resolve(null);
+          }
         };
         request.onerror = () => {
           resolve(null);
@@ -212,7 +217,10 @@ export class IndexedDBAdapter implements StorageAdapter {
         request.onsuccess = () => {
           const cursor = request.result;
           if (cursor) {
-            results.push(cursor.value);
+            const val = cursor.value;
+            if (val && typeof val === "object" && typeof val.id === "string") {
+              results.push(val);
+            }
             if (limit !== undefined && limit > 0 && results.length >= limit) {
               resolve(results);
               return;

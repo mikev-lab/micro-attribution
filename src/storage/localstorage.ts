@@ -216,7 +216,13 @@ export class LocalStorageAdapter implements StorageAdapter {
         return [];
       }
       const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+      return parsed.filter(
+        (item): item is QueuedEvent =>
+          Boolean(item && typeof item === "object" && typeof (item as QueuedEvent).id === "string")
+      );
     } catch {
       // Corrupted JSON or read failure: return empty queue to prevent crashing
       return [];

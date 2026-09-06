@@ -131,9 +131,43 @@ export class EventQueue {
 
     const storage = await this.ensureInitialized();
 
-    // Persist event in storage
-    await storage.set(event as QueuedEvent);
-    this.currentByteSize += recordBytes;
+    // Persist event in storage with emergency quota protection
+    try {
+      await storage.set(event as QueuedEvent);
+      this.currentByteSize += recordBytes;
+    } catch (err) {
+      const isQuota =
+        (err instanceof Error &&
+          (err.name === "QuotaExceededError" ||
+            err.message.toLowerCase().includes("quota"))) ||
+        (typeof DOMException !== "undefined" &&
+          err instanceof DOMException &&
+          err.name === "QuotaExceededError");
+
+      if (isQuota) {
+        // Emergency eviction of oldest normal priority item
+        const all = await storage.peek();
+        const victim = all.find((item) => item.priority === "normal") || all[0];
+        if (victim) {
+          await storage.delete(victim.id);
+          this.currentByteSize = Math.max(0, this.currentByteSize - victim.byteSize);
+          this.droppedEventsCount += 1;
+          this.onDrop?.(victim, "byte_limit");
+
+          // Retry write once after eviction
+          try {
+            await storage.set(event as QueuedEvent);
+            this.currentByteSize += recordBytes;
+            return event;
+          } catch {
+            this.droppedEventsCount += 1;
+            this.onDrop?.(event as QueuedEvent, "byte_limit");
+            return event;
+          }
+        }
+      }
+      throw err;
+    }
 
     return event;
   }
