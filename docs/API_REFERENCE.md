@@ -15,6 +15,7 @@ This document provides exhaustive documentation for all public modules, classes,
 | `micro-attribution/storage` | 3-tier persistence cascade | `createAdaptiveStorage`, `IndexedDBAdapter`, `LocalStorageAdapter`, `MemoryAdapter` |
 | `micro-attribution/queue` | Backpressure event queue | `EventQueue` |
 | `micro-attribution/transport` | Network dispatcher and unload flusher | `NetworkDispatcher`, `transmitBatch`, `bindUnloadFlush`, `computeFullJitterBackoff` |
+| `micro-attribution/ga4` | Zero-dependency GA4 Measurement Protocol bridge | `sendToGA4`, `formatGA4Event`, `buildGA4Payload`, `sanitizeGA4EventName` |
 
 ---
 
@@ -36,13 +37,17 @@ new MicroAttribution(options: ClientOptions)
 - `storageTier?: 'indexeddb' | 'localstorage' | 'memory'`: Preferred storage tier override.
 - `batchSize?: number` (default: `50`): Maximum events per HTTP dispatch batch.
 - `batchIntervalMs?: number` (default: `500`): Draining interval in milliseconds.
+- `redundancy?: RedundancyOptions`: Secondary failover and dual-dispatch options:
+  - `fallbackEndpoint?: string`: Secondary HTTP URL invoked if primary server returns 5xx or fails.
+  - `ga4?: GA4ForwardingOptions`: Direct Google Analytics 4 Measurement Protocol bridge.
+  - `onConversion?: (event: QueuedEvent) => Promise<void> | void`: Immediate callback hook.
 - `debug?: boolean` (default: `false`): Enables console diagnostic logging.
 
 #### Methods
-- `init(): Promise<void>`: Initializes storage, registers unload listeners, and captures campaign metadata.
+- `init(): Promise<this>`: Initializes storage, registers unload listeners, and captures campaign metadata.
 - `pageview(path?: string, metadata?: Record<string, unknown>): Promise<QueuedEvent | null>`: Records a pageview touchpoint. Subject to `sampleRate`.
-- `touchpoint(action: string, metadata?: Record<string, unknown>, priority?: 'normal' | 'high'): Promise<QueuedEvent>`: Records a custom interaction.
-- `conversion(name: string, data: { value?: number; revenue?: number; currency?: string; orderId?: string }): Promise<QueuedEvent>`: Records a monetary conversion. Always recorded with `priority: 'high'` and bypasses sampling.
+- `touchpoint(channel: string, metadata?: Record<string, unknown>): Promise<QueuedEvent | null>`: Records an explicit custom touchpoint.
+- `conversion(name: string, value: number, metadata?: Record<string, unknown>): Promise<QueuedEvent | null>`: Records a monetary conversion. Always recorded with `priority: 'high'`, dual-dispatched to redundancy targets, and bypasses sampling.
 - `flush(): Promise<DispatchResult[]>`: Immediately flushes all queued events to the server.
 - `stop(): void`: Stops periodic background draining and unbinds all window lifecycle listeners.
 - `getStats(): Promise<QueueStats>`: Returns operational metrics (event count, byte size, dropped events).
@@ -188,3 +193,50 @@ Binds page exit handlers to `visibilitychange` (`hidden`) and `pagehide`. Return
 
 ### `computeFullJitterBackoff(attempt: number, baseMs?: number, maxMs?: number): number`
 Computes randomized sleep interval: $t_{\text{sleep}} \sim \mathcal{U}(0, \min(M, B \cdot 2^r))$.
+
+---
+
+## 8. GA4 Measurement Protocol Bridge (`micro-attribution/ga4`)
+
+Zero-dependency integration for direct client-to-Google Analytics 4 forwarding: `https://www.google-analytics.com/mp/collect`.
+
+### `sendToGA4`
+Dispatches one or more telemetry events directly to GA4.
+
+```typescript
+function sendToGA4(
+  events: QueuedEvent | QueuedEvent[],
+  options: GA4ForwardingOptions
+): Promise<DispatchResult>
+```
+
+#### `GA4ForwardingOptions` Interface
+- `measurementId: string` (required): Google Analytics 4 Measurement ID (e.g. `G-XXXXXXXXXX`).
+- `apiSecret: string` (required): API Secret generated in GA4 Admin > Data Streams > Measurement Protocol.
+- `forwardPageviews?: boolean` (default: `false`): Forwards pageview events as `page_view`.
+- `clientId?: string`: Override client_id (defaults to visitor token or monotonic event ID).
+- `debug?: boolean` (default: `false`): When true, hits `/debug/mp/collect` for validation.
+
+### `formatGA4Event`
+Formats a single telemetry event into standard GA4 event format.
+
+```typescript
+function formatGA4Event(
+  event: QueuedEvent,
+  options?: GA4ForwardingOptions
+): GA4Event | null
+```
+
+### `buildGA4Payload`
+Constructs the complete GA4 JSON payload.
+
+```typescript
+function buildGA4Payload(
+  events: QueuedEvent | QueuedEvent[],
+  options: GA4ForwardingOptions
+): GA4Payload | null
+```
+
+### `sanitizeGA4EventName(name: string): string`
+Sanitizes event names to adhere strictly to GA4 naming requirements (1-40 alphanumeric/underscore characters starting with a letter).
+

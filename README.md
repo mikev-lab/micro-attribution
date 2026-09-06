@@ -141,8 +141,9 @@ Every submodule is tree-shakeable and independently importable. All standalone m
 | `micro-attribution/storage` | `dist/storage.js` | `dist/storage.cjs` | **2,029 bytes** | < 2,560 bytes | -531 B |
 | `micro-attribution/queue` | `dist/queue.js` | `dist/queue.cjs` | **1,631 bytes** | < 2,560 bytes | -929 B |
 | `micro-attribution/transport` | `dist/transport.js` | `dist/transport.cjs` | **2,059 bytes** | < 2,560 bytes | -501 B |
+| `micro-attribution/ga4` | `dist/ga4.js` | `dist/ga4.cjs` | **1,474 bytes** | < 1,500 bytes | -26 B |
 | `micro-attribution/edge` | `dist/edge.js` | `dist/edge.cjs` | **2,545 bytes** | < 2,560 bytes | -15 B |
-| `micro-attribution/client` | `dist/client.js` | `dist/client.cjs` | **6,820 bytes** | < 7,500 bytes | -680 B |
+| `micro-attribution/client` | `dist/client.js` | `dist/client.cjs` | **8,155 bytes** | < 8,500 bytes | -345 B |
 | Standalone CDN Global | `dist/index.global.js` | N/A | **9,052 bytes** | Complete Bundle | N/A |
 
 ---
@@ -305,9 +306,54 @@ export class StoreTracker {
 
   // Conversions always receive 'high' priority to guarantee delivery under backpressure
   async trackOrderCompleted(orderId: string, total: number, currency = "USD") {
-    await this.client.conversion("order_completed", { orderId, revenue: total, currency });
+    await this.client.conversion("order_completed", total, { orderId, currency });
   }
 }
+```
+
+---
+
+### Conversion Redundancy & GA4 Dual-Dispatch
+
+To guarantee that high-value monetary conversions are never lost during server outages or network partitions, `micro-attribution` supports three layers of redundancy:
+
+1. **Secondary Failover Endpoint**: If the primary ingestion server returns a 5xx error or encounters network dropouts, the dispatcher automatically fails over the batch to `fallbackEndpoint` before queuing for exponential backoff.
+2. **Zero-Dependency GA4 Bridge**: Dual-dispatches conversions directly to Google Analytics 4 via `https://www.google-analytics.com/mp/collect` using keepalive fetch or `navigator.sendBeacon`.
+3. **Immediate Conversion Callback**: Executes a local hook (`onConversion`) synchronously or asynchronously as soon as a conversion is captured for local logging, webhooks, or secondary storage.
+
+```typescript
+import { MicroAttribution } from "micro-attribution/client";
+
+const tracker = await MicroAttribution.init({
+  endpoint: "https://telemetry-primary.yourdomain.com/v1/events",
+  redundancy: {
+    // 1. Failover endpoint invoked if primary returns 5xx
+    fallbackEndpoint: "https://telemetry-backup.yourdomain.com/v1/events",
+
+    // 2. Opt-in direct GA4 dual-dispatch (zero external dependencies)
+    ga4: {
+      measurementId: "G-XXXXXXXXXX",
+      apiSecret: "your_mp_api_secret",
+      forwardPageviews: false, // Set to true to also mirror pageviews
+    },
+
+    // 3. Local callback for immediate external dispatch or logging
+    onConversion: (event) => {
+      console.log("High-priority conversion recorded:", event.payload);
+    },
+  },
+});
+```
+
+Standalone GA4 dispatch is also available as an independent submodule (< 1.5 KB min+gzip):
+
+```typescript
+import { sendToGA4 } from "micro-attribution/ga4";
+
+await sendToGA4(conversionEvent, {
+  measurementId: "G-XXXXXXXXXX",
+  apiSecret: "your_mp_api_secret",
+});
 ```
 
 ---

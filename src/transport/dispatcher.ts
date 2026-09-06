@@ -28,6 +28,7 @@ const DEFAULT_MAX_RETRIES = 10;
 export class NetworkDispatcher {
   private readonly queue: EventQueue;
   private readonly endpoint: string;
+  private readonly fallbackEndpoint?: string;
   private readonly batchSize: number;
   private readonly batchIntervalMs: number;
   private readonly baseBackoffMs: number;
@@ -58,6 +59,7 @@ export class NetworkDispatcher {
 
     this.queue = queue;
     this.endpoint = options.endpoint;
+    this.fallbackEndpoint = options.fallbackEndpoint;
     this.batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
     this.batchIntervalMs = options.batchIntervalMs ?? DEFAULT_BATCH_INTERVAL_MS;
     this.baseBackoffMs = options.baseBackoffMs ?? DEFAULT_BASE_BACKOFF_MS;
@@ -181,10 +183,29 @@ export class NetworkDispatcher {
 
       const ids = events.map((event) => event.id);
 
-      const result = await transmitBatch(this.endpoint, events, {
+      let result = await transmitBatch(this.endpoint, events, {
         headers: this.headers,
         preferredTransport: this.preferredTransport,
       });
+
+      // Failover to secondary fallback endpoint if primary encounters server or network failure
+      if (!result.success && this.fallbackEndpoint) {
+        const isClientError =
+          typeof result.status === "number" &&
+          result.status >= 400 &&
+          result.status < 500 &&
+          result.status !== 429;
+
+        if (!isClientError) {
+          const fallbackResult = await transmitBatch(this.fallbackEndpoint, events, {
+            headers: this.headers,
+            preferredTransport: this.preferredTransport,
+          });
+          if (fallbackResult.success) {
+            result = fallbackResult;
+          }
+        }
+      }
 
       if (result.success) {
         // Successful transmission: acknowledge and purge from storage
@@ -272,10 +293,20 @@ export class NetworkDispatcher {
       const ids = events.map((event) => event.id);
 
       // Prioritize beacon or keepalive during emergency unload flush
-      const result = await transmitBatch(this.endpoint, events, {
+      let result = await transmitBatch(this.endpoint, events, {
         headers: this.headers,
         preferredTransport: this.preferredTransport ?? "beacon",
       });
+
+      if (!result.success && this.fallbackEndpoint) {
+        const fallbackResult = await transmitBatch(this.fallbackEndpoint, events, {
+          headers: this.headers,
+          preferredTransport: this.preferredTransport ?? "beacon",
+        });
+        if (fallbackResult.success) {
+          result = fallbackResult;
+        }
+      }
 
       results.push(result);
 

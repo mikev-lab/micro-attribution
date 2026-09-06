@@ -280,6 +280,8 @@ export interface DispatchResult {
 export interface DispatcherOptions {
   /** Ingestion server endpoint URL */
   endpoint: string;
+  /** Secondary backup HTTP endpoint used if primary endpoint fails */
+  fallbackEndpoint?: string;
   /** Maximum number of events to dispatch per batch (default 50) */
   batchSize?: number;
   /** Draining interval in milliseconds when queue is non-empty (default 500 ms) */
@@ -335,6 +337,35 @@ export interface CampaignInfo {
 }
 
 /**
+ * Configuration for forwarding conversions to Google Analytics 4 Measurement Protocol.
+ * Uses native zero-dependency HTTP requests to https://www.google-analytics.com/mp/collect.
+ */
+export interface GA4ForwardingOptions {
+  /** Google Analytics 4 Measurement ID (e.g. 'G-XXXXXXXXXX') */
+  measurementId: string;
+  /** Google Analytics 4 API Secret generated in Admin > Data Streams > Measurement Protocol */
+  apiSecret: string;
+  /** Whether to forward pageviews in addition to conversions (default: false) */
+  forwardPageviews?: boolean;
+  /** Explicit client_id to attach to GA4 payloads (defaults to visitor token or event id) */
+  clientId?: string;
+  /** When true, dispatches to GA4 debug endpoint /debug/mp/collect for validation */
+  debug?: boolean;
+}
+
+/**
+ * Secondary redundancy configuration to ensure monetary conversions are never lost.
+ */
+export interface RedundancyOptions {
+  /** Secondary backup HTTP endpoint used if the primary endpoint experiences an outage */
+  fallbackEndpoint?: string;
+  /** Optional zero-dependency GA4 Measurement Protocol bridge */
+  ga4?: GA4ForwardingOptions;
+  /** Optional callback invoked immediately whenever a high-priority conversion is recorded */
+  onConversion?: (event: QueuedEvent) => Promise<void> | void;
+}
+
+/**
  * Configuration options for initializing the MicroAttribution client SDK.
  */
 export interface ClientOptions {
@@ -342,6 +373,8 @@ export interface ClientOptions {
   endpoint: string;
   /** Custom storage adapter (defaults to createAdaptiveStorage cascade: IDB -> LocalStorage -> Memory) */
   storage?: StorageAdapter;
+  /** Preferred storage tier override ('indexeddb', 'localstorage', 'memory') */
+  storageTier?: StorageTier;
   /** Maximum number of events to dispatch per network batch (default 50) */
   batchSize?: number;
   /** Draining interval in milliseconds when queue is non-empty (default 500 ms) */
@@ -356,6 +389,8 @@ export interface ClientOptions {
   autoCapturePageview?: boolean;
   /** Automatically extract and attach campaign parameters from window location (default true) */
   autoCaptureCampaign?: boolean;
+  /** Automatically classify inbound document referrer (default true) */
+  autoCaptureReferrer?: boolean;
   /** Server-side or client pepper for daily salt visitor pseudonym hashing */
   saltPepper?: string;
   /** Client-side sample rate between 0.0 and 1.0 (default 1.0 = 100% telemetry capture) */
@@ -364,6 +399,8 @@ export interface ClientOptions {
   headers?: Record<string, string>;
   /** Preferred transport mechanism ('beacon', 'keepalive', 'fetch') */
   preferredTransport?: TransportType;
+  /** Optional secondary redundancy and failover configuration */
+  redundancy?: RedundancyOptions;
   /** Enable diagnostic console logging */
   debug?: boolean;
 }

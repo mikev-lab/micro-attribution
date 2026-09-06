@@ -22,7 +22,9 @@ export default defineConfig([
       queue: "src/queue/index.ts",
       transport: "src/transport/index.ts",
       client: "src/client/index.ts",
-      edge: "src/edge/index.ts"
+      edge: "src/edge/index.ts",
+      ga4: "src/integrations/ga4.ts",
+      integrations: "src/integrations/index.ts"
     },
     format: ["esm", "cjs"],
     dts: true,

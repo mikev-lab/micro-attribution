@@ -70,9 +70,8 @@ export class EcommerceAnalytics {
 
   async trackPurchase(orderId: string, revenue: number, currency = "USD"): Promise<void> {
     // Conversions automatically receive 'high' priority to protect them from quota eviction
-    await this.tracker.conversion("order_completed", {
+    await this.tracker.conversion("order_completed", revenue, {
       orderId,
-      revenue,
       currency,
     });
   }
@@ -190,7 +189,47 @@ const customQueue = new EventQueue({
 
 ---
 
-## 4. Custom Marketing Channels & Referrer Rules
+## 4. Conversion Dual-Redundancy & GA4 Forwarding
+
+When telemetry captures high-value financial events (ecommerce purchases, SaaS subscriptions, loan applications), multi-tier redundancy ensures that outages at your primary telemetry infrastructure do not lose monetary attribution data.
+
+### 1. Client Secondary Endpoint Failover
+The SDK can be initialized with a `fallbackEndpoint`. If the primary endpoint encounters 5xx server errors, timeouts, or network dropouts, the batch is automatically rerouted to the fallback endpoint before any exponential backoff occurs:
+
+```typescript
+import { MicroAttribution } from "micro-attribution/client";
+
+const tracker = await MicroAttribution.init({
+  endpoint: "https://primary-telemetry.example.com/collect",
+  redundancy: {
+    fallbackEndpoint: "https://backup-telemetry.example.com/collect",
+  },
+});
+```
+
+### 2. Zero-Dependency GA4 Dual-Dispatch
+Mirror high-value conversion events directly to Google Analytics 4 via Measurement Protocol without importing `gtag.js` or external third-party scripts:
+
+```typescript
+const tracker = await MicroAttribution.init({
+  endpoint: "https://primary-telemetry.example.com/collect",
+  redundancy: {
+    ga4: {
+      measurementId: "G-XXXXXXXXXX",
+      apiSecret: "your_mp_api_secret",
+      forwardPageviews: false, // Set to true to also mirror page_view events
+    },
+    onConversion: (event) => {
+      // Local immediate hook: e.g. send to internal monitoring or indexed logging
+      console.log("Conversion dual-dispatched:", event.payload);
+    },
+  },
+});
+```
+
+---
+
+## 5. Custom Marketing Channels & Referrer Rules
 
 `extractCampaignMetadata` automatically normalizes common UTM parameters and platform click identifiers (`gclid`, `fbclid`, `msclkid`, `ttclid`, etc.). You can augment this with custom channel rules:
 
@@ -222,7 +261,7 @@ export function resolveCustomMarketingChannel(url: string, referrer: string): st
 
 ---
 
-## 5. Custom Parametric Attribution Models
+## 6. Custom Parametric Attribution Models
 
 ### Custom Position-Based / U-Shaped Weights
 Adjust weights between discovery, nurturing, and closing interactions:
@@ -277,7 +316,7 @@ const flashSaleDecay = calculateAttribution(journey, "time-decay", {
 
 ---
 
-## 6. Edge Collector Pipeline Extensions
+## 7. Edge Collector Pipeline Extensions
 
 `handleEdgeRequest` provides an `onBatch` hook designed for real-time edge processing and streaming into multiple analytical destinations:
 

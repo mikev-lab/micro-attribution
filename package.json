@@ -46,6 +46,16 @@
       "types": "./dist/edge.d.ts",
       "import": "./dist/edge.js",
       "require": "./dist/edge.cjs"
+    },
+    "./ga4": {
+      "types": "./dist/ga4.d.ts",
+      "import": "./dist/ga4.js",
+      "require": "./dist/ga4.cjs"
+    },
+    "./integrations": {
+      "types": "./dist/integrations.d.ts",
+      "import": "./dist/integrations.js",
+      "require": "./dist/integrations.cjs"
     }
   },
   "files": [

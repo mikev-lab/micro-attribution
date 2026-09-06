@@ -17,6 +17,7 @@ import { generateVisitorToken } from "../privacy/hasher.js";
 import { EventQueue } from "../queue/event-queue.js";
 import { createAdaptiveStorage } from "../storage/factory.js";
 import { NetworkDispatcher } from "../transport/dispatcher.js";
+import { sendToGA4 } from "../integrations/ga4.js";
 import type {
   ClientOptions,
   DispatchResult,
@@ -67,6 +68,9 @@ export class MicroAttribution {
 
     this.dispatcher = new NetworkDispatcher(this.queue, {
       endpoint: this.options.endpoint,
+      fallbackEndpoint:
+        this.options.redundancy?.fallbackEndpoint ??
+        (this.options as { fallbackEndpoint?: string }).fallbackEndpoint,
       batchSize: this.options.batchSize,
       batchIntervalMs: this.options.batchIntervalMs,
       baseBackoffMs: this.options.baseBackoffMs,
@@ -108,7 +112,9 @@ export class MicroAttribution {
 
     // If storage adapter was not supplied, mount adaptive storage tier
     if (!this.options.storage) {
-      const adaptiveStorage = await createAdaptiveStorage();
+      const adaptiveStorage = await createAdaptiveStorage({
+        preferredTier: this.options.storageTier,
+      });
       await (this.queue as unknown as { initStorage?: (s: unknown) => Promise<void> }).initStorage?.(adaptiveStorage);
     }
 
@@ -170,6 +176,11 @@ export class MicroAttribution {
     };
 
     const event = await this.queue.enqueue(payload, "normal");
+
+    if (event && this.options.redundancy?.ga4?.forwardPageviews) {
+      void sendToGA4(event, this.options.redundancy.ga4);
+    }
+
     return event;
   }
 
@@ -216,17 +227,43 @@ export class MicroAttribution {
     value: number,
     metadata?: Record<string, unknown>
   ): Promise<QueuedEvent | null> {
+    const validValue = Math.max(0, Number.isFinite(value) ? value : 0);
     // Conversions strictly bypass sample rate to preserve financial revenue metrics
     const payload: Record<string, unknown> = {
       type: "conversion",
       name,
-      value: Math.max(0, Number.isFinite(value) ? value : 0),
+      value: validValue,
       visitorToken: this.visitorToken,
       timestamp: clock.now(),
+      conversion: {
+        conversionId: name,
+        revenue: validValue,
+        currency: (metadata?.currency as string) || "USD",
+        transactionId: (metadata?.transactionId as string) || (metadata?.orderId as string),
+        properties: metadata,
+      },
       ...(metadata ?? {}),
     };
 
     const event = await this.queue.enqueue(payload, "high");
+
+    if (event) {
+      // Dual-dispatch to GA4 Measurement Protocol bridge if configured
+      const ga4Options = this.options.redundancy?.ga4;
+      if (ga4Options) {
+        void sendToGA4(event, ga4Options);
+      }
+
+      // Invoke user-defined onConversion redundancy hook if configured
+      const onConversionHook = this.options.redundancy?.onConversion;
+      if (onConversionHook) {
+        try {
+          void Promise.resolve(onConversionHook(event)).catch(() => {});
+        } catch {
+          // Suppress errors to prevent blocking main pipeline
+        }
+      }
+    }
 
     // Trigger immediate rapid drain for urgent conversion dispatch
     void this.dispatcher.drain();
