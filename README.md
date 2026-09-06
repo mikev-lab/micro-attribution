@@ -5,19 +5,19 @@
 ### Zero-Dependency, Offline-Resilient Telemetry & Privacy-Preserving Attribution
 
 [![Zero Runtime Dependencies](https://img.shields.io/badge/dependencies-0-success.svg?style=flat-square)](package.json)
-[![Dual Runtime](https://img.shields.io/badge/runtime-Browser%20%7C%20Edge%20%7C%20Node-blue.svg?style=flat-square)](#-dual-runtime-architecture)
-[![Bundle Size Budget](https://img.shields.io/badge/min%2Bgzip-%3C%202.5%20KB%20per%20module-brightgreen.svg?style=flat-square)](#-verified-bundle-budget-metrics)
+[![Dual Runtime](https://img.shields.io/badge/runtime-Browser%20%7C%20Edge%20%7C%20Node-blue.svg?style=flat-square)](#dual-runtime-architecture)
+[![Bundle Size Budget](https://img.shields.io/badge/min%2Bgzip-%3C%202.5%20KB%20per%20module-brightgreen.svg?style=flat-square)](#verified-bundle-budget-metrics)
 [![Tests Passing](https://img.shields.io/badge/tests-198%20passed%20(100%25)-success.svg?style=flat-square)](tests/)
 [![TypeScript Strict](https://img.shields.io/badge/typescript-strict%20mode-blue.svg?style=flat-square)](tsconfig.json)
-[![Statutory Privacy](https://img.shields.io/badge/privacy-GDPR%20%7C%20CCPA%20%7C%20ePrivacy-orange.svg?style=flat-square)](#-statutory-privacy--regulatory-compliance)
+[![Statutory Privacy](https://img.shields.io/badge/privacy-GDPR%20%7C%20CCPA%20%7C%20ePrivacy-orange.svg?style=flat-square)](#statutory-privacy--regulatory-compliance)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
 <p align="center">
   A high-throughput client and edge telemetry engine for cookieless conversion attribution.<br/>
-  Combines sub-pixel monotonic event capture, a 3-tier offline storage cascade, jittered backoff delivery, and real-time multi-touch attribution (MTA) math.
+  Combines sub-pixel monotonic event capture, an adaptive offline storage cascade, jittered backoff delivery, and real-time multi-touch attribution (MTA) mathematics.
 </p>
 
-[Quickstart](#-quickstart-guide) • [Architecture](#-system-architecture--data-flow) • [Attribution Models](#-attribution-models--mathematics) • [Edge Collector](#-universal-edge-collector) • [API Reference](docs/API_REFERENCE.md) • [Framework Integrations](docs/FRAMEWORK_INTEGRATIONS.md)
+[Quickstart](#quickstart-guide) • [Architecture](#system-architecture--data-flow) • [Attribution Models](#attribution-models--mathematics) • [Customization](#customization--extensibility) • [ePrivacy Compliance](#statutory-privacy--regulatory-compliance) • [API Reference](docs/API_REFERENCE.md) • [Framework Integrations](docs/FRAMEWORK_INTEGRATIONS.md)
 
 ---
 
@@ -25,57 +25,64 @@
 
 ## Table of Contents
 
-- [Overview](#-overview)
-- [Why micro-attribution?](#-why-micro-attribution)
-- [System Architecture & Data Flow](#-system-architecture--data-flow)
-- [Verified Bundle Budget Metrics](#-verified-bundle-budget-metrics)
-- [Quickstart Guide](#-quickstart-guide)
+- [Overview](#overview)
+- [Comparative Analysis](#comparative-analysis)
+- [System Architecture & Data Flow](#system-architecture--data-flow)
+- [Verified Bundle Budget Metrics](#verified-bundle-budget-metrics)
+- [Quickstart Guide](#quickstart-guide)
   - [1. Client-Side Browser Telemetry](#1-client-side-browser-telemetry)
   - [2. Universal Edge Ingestion Collector](#2-universal-edge-ingestion-collector)
   - [3. Multi-Touch Attribution Engine](#3-multi-touch-attribution-engine)
-- [Attribution Models & Mathematics](#-attribution-models--mathematics)
-- [Statutory Privacy & Regulatory Compliance](#-statutory-privacy--regulatory-compliance)
-- [Performance & Microbenchmarks](#-performance--microbenchmarks)
-- [Modular Subpath Package Map](#-modular-subpath-package-map)
-- [Enterprise FAQ](#-enterprise-faq)
-- [Verification & Quality Gates](#-verification--quality-gates)
-- [License](#-license)
+- [Customization & Extensibility](#customization--extensibility)
+  - [Custom Event Taxonomy & Ecommerce Funnels](#custom-event-taxonomy--ecommerce-funnels)
+  - [Zero-Storage Mode for Strict ePrivacy Exemption](#zero-storage-mode-for-strict-eprivacy-exemption)
+  - [Custom Parametric Attribution Models](#custom-parametric-attribution-models)
+  - [Edge Ingestion Enrichment & Destinations](#edge-ingestion-enrichment--destinations)
+- [Attribution Models & Mathematics](#attribution-models--mathematics)
+- [Statutory Privacy & Regulatory Compliance](#statutory-privacy--regulatory-compliance)
+- [Performance & Microbenchmarks](#performance--microbenchmarks)
+- [Modular Subpath Package Map](#modular-subpath-package-map)
+- [Frequently Asked Questions](#frequently-asked-questions)
+- [Verification & Quality Gates](#verification--quality-gates)
+- [License](#license)
 
 ---
 
-## 🌟 Overview
+## Overview
 
 `micro-attribution` is built for modern engineering teams who need reliable marketing telemetry and mathematically sound attribution without sacrificing page speed, user privacy, or bundle budgets.
 
-Most analytics libraries carry dozens of kilobytes of third-party dependencies, inject persistent tracking cookies that trigger GDPR/ePrivacy cookie banner mandates, drop events during abrupt mobile browser tab closures, and rely on black-box server-side attribution algorithms.
+Most analytics libraries carry dozens of kilobytes of third-party dependencies, inject persistent tracking cookies that trigger GDPR and ePrivacy cookie banner mandates, drop events during abrupt mobile browser tab closures, and rely on black-box server-side attribution algorithms.
 
-`micro-attribution` solves these challenges natively:
-- **Zero Runtime Dependencies**: Strictly `dependencies: {}` in `package.json`. Everything runs on native Web APIs (`crypto.subtle`, `IndexedDB`, `fetch`, `navigator.sendBeacon`) and pure TypeScript.
-- **Micro Bundle Budget**: Modular subpath architecture where core modules compile to **strictly < 2.5 KB min+gzip**.
+`micro-attribution` addresses these challenges natively:
+- **Zero Runtime Dependencies**: Strictly `dependencies: {}` in `package.json`. Native Web APIs (`crypto.subtle`, `IndexedDB`, `fetch`, `navigator.sendBeacon`) and pure TypeScript.
+- **Strict Bundle Budget**: Modular subpath architecture where core modules compile to **strictly < 2.5 KB min+gzip**.
 - **Offline Resilience & Backpressure**: 3-tier adaptive persistence (`IndexedDB` -> `localStorage` -> `Memory`) with priority-aware FIFO eviction protecting monetary conversion records under device quota pressure.
 - **Unload Survival**: Modern lifecycle listeners bound to `visibilitychange` and `pagehide` ensuring 100% bfcache compatibility and zero event loss on mobile app backgrounding or desktop tab closure.
-- **Statutory Privacy by Design**: 100% cookieless sessionization, daily rotating salt tokenization, IPv4/IPv6 subnet masking, and deep recursive PII redaction.
+- **Statutory Privacy by Design**: Cookieless sessionization, daily rotating salt tokenization, IPv4/IPv6 subnet masking, and deep recursive PII redaction.
 - **Native MTA Calculation**: Single-Touch, Heuristic Multi-Touch (Linear, Time-Decay, Position-Based), and algorithmic discrete-time absorbing Markov Chains with Removal Effect scoring.
 
 ---
 
-## 📊 Why micro-attribution?
+## Comparative Analysis
 
 | Capability | `micro-attribution` | Google Analytics 4 | Segment Analytics.js | Snowplow JS | RudderStack |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **Runtime Dependencies** | **0 (Strictly None)** | 0 | 12+ | 8+ | 15+ |
 | **Core Gzipped Size** | **< 2.5 KB** | ~28 KB | ~35 KB | ~40 KB | ~32 KB |
 | **Cookieless Sessionization** | **Built-in** | No | No | Optional | No |
-| **ePrivacy Banner Exempt** | **Yes** | No | No | Configuration Required | No |
+| **ePrivacy Banner Exempt** | **Yes (Zero-Storage Mode\*)** | No | No | Requires Configuration | No |
 | **Offline Durable Queue** | **IndexedDB + Fallbacks** | In-Memory Only | In-Memory / LocalStorage | LocalStorage | LocalStorage |
 | **Priority Eviction (Protect Conversions)** | **Yes** | No | No | No | No |
 | **Modern Unload Hooks (bfcache safe)** | **Yes** | Partial | Deprecated unload | Partial | Deprecated unload |
 | **Native Multi-Touch Attribution (MTA)** | **7 Models Built-in** | Black-box Server Only | External Tooling | Server-side Modeling | External Tooling |
 | **Serverless Edge Collector** | **Universal Handler** | Cloud Prop | Server / Proxy | Pipeline Required | Server Required |
 
+*\*Note on ePrivacy Banner Exemption: Standard Mode uses short-lived IndexedDB/localStorage queuing. Zero-Storage Mode (`storageTier: "memory"`) writes zero bytes to terminal storage, aligning directly with consent exemption frameworks such as France's CNIL audience measurement criteria. See the [Statutory Privacy section](#statutory-privacy--regulatory-compliance) for legal details.*
+
 ---
 
-## 🏗 System Architecture & Data Flow
+## System Architecture & Data Flow
 
 The telemetry lifecycle connects client collection, offline queuing, jittered network transport, edge anonymization, and mathematical attribution modeling:
 
@@ -123,7 +130,7 @@ For complete architectural details, see the [Technical Architecture Specificatio
 
 ---
 
-## 📦 Verified Bundle Budget Metrics
+## Verified Bundle Budget Metrics
 
 Every submodule is tree-shakeable and independently importable. All standalone modules strictly beat the **< 2.5 KB (2,560 bytes) min+gzip** target:
 
@@ -140,7 +147,7 @@ Every submodule is tree-shakeable and independently importable. All standalone m
 
 ---
 
-## 🚀 Quickstart Guide
+## Quickstart Guide
 
 ### Installation
 
@@ -259,11 +266,139 @@ const cohortResult = calculateCohortAttribution([journey /* ...journeys */], "ma
 console.log(cohortResult.credits);
 ```
 
-For framework-specific guides (Next.js App Router, React Context, Vue 3, Svelte), see [Framework Integration Guides](docs/FRAMEWORK_INTEGRATIONS.md).
+---
+
+## Customization & Extensibility
+
+`micro-attribution` is designed as a flexible foundation that you can tailor to your specific event schemas, privacy requirements, and marketing channels.
+
+### Custom Event Taxonomy & Ecommerce Funnels
+
+You can define custom, strongly typed tracking methods for your application domain:
+
+```typescript
+import { MicroAttribution } from "micro-attribution/client";
+
+export class StoreTracker {
+  private client: MicroAttribution;
+
+  constructor(endpoint: string) {
+    this.client = new MicroAttribution({ endpoint });
+  }
+
+  async init() {
+    await this.client.init();
+  }
+
+  // Custom funnel interactions
+  async trackProductView(productId: string, category: string, price: number) {
+    await this.client.touchpoint("product_viewed", { productId, category, price });
+  }
+
+  async trackCartAddition(cartId: string, itemId: string, amount: number) {
+    await this.client.touchpoint("cart_added", { cartId, itemId, amount });
+  }
+
+  async trackCheckoutStep(step: number, stepName: string, subtotal: number) {
+    await this.client.touchpoint("checkout_step", { step, stepName, subtotal });
+  }
+
+  // Conversions always receive 'high' priority to guarantee delivery under backpressure
+  async trackOrderCompleted(orderId: string, total: number, currency = "USD") {
+    await this.client.conversion("order_completed", { orderId, revenue: total, currency });
+  }
+}
+```
 
 ---
 
-## 📐 Attribution Models & Mathematics
+### Zero-Storage Mode for Strict ePrivacy Exemption
+
+If your legal compliance framework mandates absolute zero writes to terminal equipment (`localStorage` / `IndexedDB`) to avoid consent banner requirements:
+
+```typescript
+import { MicroAttribution } from "micro-attribution/client";
+
+// Pure In-Memory Mode: Zero data written to client disk or persistent storage
+const tracker = new MicroAttribution({
+  endpoint: "https://telemetry.yourdomain.com/collect",
+  storageTier: "memory", // Volatile RAM only
+  autoCaptureCampaign: true,
+  autoCaptureReferrer: true,
+});
+
+await tracker.init();
+```
+
+---
+
+### Custom Parametric Attribution Models
+
+Customize attribution weights and decay parameters to match your specific sales cycle:
+
+```typescript
+import { calculateAttribution } from "micro-attribution/attribution";
+
+// 1. Custom Position-Based Weights: 50% Discovery (First), 30% Close (Last), 20% Nurture (Middle)
+const customU = calculateAttribution(journey, "position-based", {
+  positionWeights: {
+    first: 0.50,
+    middle: 0.20,
+    last: 0.30,
+  },
+});
+
+// 2. Custom Time-Decay Half-Life: 30 days for extended B2B sales cycles
+const b2bDecay = calculateAttribution(journey, "time-decay", {
+  halfLifeDays: 30,
+});
+
+// 3. Custom Direct Channel Aliases (e.g. internal intranets or portal domains)
+const customDirect = calculateAttribution(journey, "last-non-direct", {
+  directChannels: ["direct", "internal_portal", "employee_intranet"],
+});
+```
+
+---
+
+### Edge Ingestion Enrichment & Destinations
+
+Extend the edge handler to enrich payloads with geolocation or route events to multiple data stores:
+
+```typescript
+import { handleEdgeRequest } from "micro-attribution/edge";
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    return handleEdgeRequest(request, {
+      saltSecret: env.SALT_SECRET,
+      onBatch: async (events, context) => {
+        // Enrich events with edge headers
+        const country = request.headers.get("cf-ipcountry") || "UNKNOWN";
+        const enriched = events.map((event) => ({
+          ...event,
+          geo: { country },
+          visitorToken: context.visitorToken,
+          clientIpMasked: context.clientIp,
+          edgeTimestamp: context.timestamp,
+        }));
+
+        // Dual dispatch: warehouse insertion and conversion alerting
+        await Promise.all([
+          warehouse.insert(enriched),
+          events.some((e) => e.priority === "high") ? alerts.notifyConversion(enriched) : null,
+        ]);
+      },
+    });
+  },
+};
+```
+
+For complete customization recipes and custom storage adapter examples, see the [Customization & Extensibility Guide](docs/CUSTOMIZATION_AND_EXTENSIONS.md).
+
+---
+
+## Attribution Models & Mathematics
 
 `micro-attribution` provides 7 attribution models, each enforcing two fundamental mathematical invariants:
 1. **Credit Fraction Normalization**: $\sum_{i=1}^m w_i = 1.0 \pm 10^{-6}$
@@ -287,22 +422,26 @@ For mathematical derivations, Gaussian elimination matrices, and algorithmic pro
 
 ---
 
-## 🔒 Statutory Privacy & Regulatory Compliance
+## Statutory Privacy & Regulatory Compliance
 
-`micro-attribution` is engineered to be compliant with GDPR (Article 5(1)(c)), CCPA/CPRA, and the ePrivacy Directive out of the box:
+### Would this be ePrivacy Banner Exempt?
 
-1. **Zero Third-Party Cookies**: Does not read, set, or transmit third-party tracking cookies.
-2. **Daily Rotating Ephemeral Salt**: Visitor tokens are hashed using HMAC-SHA256 with an ephemeral daily salt rotated at UTC midnight:
-   $$S_d = \text{SHA-256}(K_{\text{secret}} \parallel \text{YYYY-MM-DD})$$
-   This enables accurate intraday journey stitching while rendering longitudinal cross-day surveillance cryptographically impossible.
-3. **Subnet Masking**: Client IP addresses are truncated prior to logging (/24 IPv4, /48 IPv6).
-4. **Deep Recursive PII Scrubbing**: Objects and query strings are scanned for denylisted keys (`password`, `token`, `secret`, `ssn`) and regex patterns (emails, payment card PANs), redacting them automatically while preserving marketing attribution parameters (`utm_*`, `gclid`, `fbclid`).
+Under European Data Protection regulations (Directive 2002/58/EC Article 5(3)), any read or write access to the user's terminal equipment requires prior consent unless it is "strictly necessary" for the service explicitly requested by the user.
+
+Multiple European Data Protection Authorities (most notably France's **CNIL**, but also the UK **ICO** and Spain's **AEPD**) have published formal exemption guidelines for audience measurement tools that meet strict operational criteria:
+1. **First-Party Audience Measurement Only**: Telemetry serves exclusively to produce anonymous statistical analysis for the site publisher.
+2. **Zero Third-Party Cookies & Cross-Site Tracking**: No tracking cookies are set or shared across third-party websites.
+3. **Subnet Masking**: IP addresses are truncated prior to logging (/24 for IPv4, /48 prefix for IPv6).
+4. **Daily Ephemeral Salt Rotation**: Visitor pseudonyms are generated using HMAC-SHA256 with a salt rotated at UTC midnight ($S_d = \text{SHA-256}(K \parallel \text{YYYY-MM-DD})$), preventing longitudinal profiling across days.
+5. **Terminal Storage Nuance**:
+   - **Standard Mode (IndexedDB / LocalStorage)**: Uses client storage as a temporary, durable queue. While non-profiling, strict authorities (such as Germany's DSK) consider any terminal write subject to consent.
+   - **Zero-Storage Mode (`storageTier: "memory"`)**: Operates entirely in volatile RAM without writing to the user's disk. This configuration aligns directly with CNIL exemption criteria, allowing deployment without a cookie consent banner under Legitimate Interest.
 
 ---
 
-## ⚡ Performance & Microbenchmarks
+## Performance & Microbenchmarks
 
-All benchmarks are executed via Vitest and validated on standard hardware:
+All benchmarks are executed via Vitest and validated on standard commodity hardware:
 
 - **1,000-Touchpoint Journey Attribution**: Heuristic calculations (First-Touch, Last-Touch, Linear, Time-Decay, Position-Based) complete in **strictly < 5.0 ms** per journey.
 - **Dense Markov Network Solving**: Computing absorbing fundamental matrices and removal effect scores across dense 15-channel networks with cyclic loops executes in **strictly < 25.0 ms**.
@@ -310,7 +449,7 @@ All benchmarks are executed via Vitest and validated on standard hardware:
 
 ---
 
-## 🗺 Modular Subpath Package Map
+## Modular Subpath Package Map
 
 Every subpath is completely isolated and independently importable:
 
@@ -329,23 +468,23 @@ For exhaustive parameter types and interfaces, see the [Complete API Reference](
 
 ---
 
-## ❓ Enterprise FAQ
+## Frequently Asked Questions
 
-#### Do I need a cookie consent banner to use micro-attribution?
-Under ePrivacy Directive (Directive 2002/58/EC) and GDPR Article 5, consent banners are mandated when storing or accessing information on a user's terminal equipment for tracking purposes (e.g. tracking cookies or persistent device fingerprinting). Because `micro-attribution` operates without persistent tracking cookies, does not access device identifiers across days, and rotates visitor tokens daily, it can be deployed under **Legitimate Interest** for first-party measurement.
-
-#### How does it survive browser tab closure?
+#### How does micro-attribution survive browser tab closure?
 `micro-attribution` hooks into modern browser lifecycle events: `visibilitychange` (when `visibilityState === 'hidden'`) and `pagehide`. It transmits pending batches via `navigator.sendBeacon()`, falling back to `fetch(..., { keepalive: true })` if the beacon buffer is saturated. This guarantees transmission without delaying page navigation or triggering deprecated `unload` penalties that break the browser Back/Forward Cache (bfcache).
 
 #### What happens if the client device is offline?
-Events are persisted in IndexedDB (or LocalStorage/Memory as fallback). When network connectivity is restored, the `online` event listener triggers an immediate queue drain. If the server is temporarily down, truncated exponential backoff with full jitter automatically spaces out retries up to 30 seconds.
+Events are persisted in IndexedDB (or LocalStorage/Memory as fallback). When network connectivity is restored, the `online` event listener triggers an immediate queue drain. If the server is temporarily unreachable, truncated exponential backoff with full jitter automatically spaces out retries up to 30 seconds.
 
 #### Will monetary conversion events be lost under high volume?
 No. Monetary conversions are enqueued with `priority: 'high'`. When the queue reaches capacity ($N_{\max} = 1000$ or $S_{\max} = 2\text{ MB}$), or when storage throws `QuotaExceededError`, the queue evicts the oldest normal-priority pageviews or clicks first, strictly preserving conversion records.
 
+#### How does it compare to server-side tracking?
+`micro-attribution` supports both. The client SDK captures rich campaign query parameters and referrer metadata on the client, while the edge collector (`micro-attribution/edge`) provides a lightweight, serverless ingress point for Cloudflare Workers, Vercel Edge, Deno, or Node.js.
+
 ---
 
-## ✅ Verification & Quality Gates
+## Verification & Quality Gates
 
 Every build and tag is validated through strict verification gates:
 
@@ -365,6 +504,6 @@ npm run build
 
 ---
 
-## 📄 License
+## License
 
 MIT License. Copyright (c) 2026 Mike V.
