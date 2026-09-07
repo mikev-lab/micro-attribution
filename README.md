@@ -64,7 +64,7 @@ Most analytics libraries carry dozens of kilobytes of third-party dependencies, 
 - **Unload Survival**: Modern lifecycle listeners bound to `visibilitychange` and `pagehide` ensuring 100% bfcache compatibility and zero event loss on mobile app backgrounding or desktop tab closure.
 - **Statutory Privacy by Design**: Cookieless sessionization, daily rotating salt tokenization, IPv4/IPv6 subnet masking, and deep recursive PII redaction.
 - **Native MTA Calculation**: Single-Touch, Heuristic Multi-Touch (Linear, Time-Decay, Position-Based), and algorithmic discrete-time absorbing Markov Chains with Removal Effect scoring.
-- **Zero-Dependency GA4 Bridge**: Direct HTTP dual-dispatch to Google Analytics 4 Measurement Protocol (`/mp/collect`) for financial conversion redundancy without loading Google `gtag.js` scripts.
+- **Zero-Dependency GA4 Bridge**: Direct HTTP dual-dispatch to Google Analytics 4 Measurement Protocol (`/mp/collect`) on edge collectors or server runtimes for financial conversion redundancy without loading Google `gtag.js` scripts or exposing API secrets in public client bundles.
 - **Automatic Endpoint Failover**: Secondary fallback ingestion URL failover for high-availability enterprise pipelines.
 
 ---
@@ -332,13 +332,20 @@ export class StoreTracker {
 
 ---
 
-### Conversion Redundancy & GA4 Dual-Dispatch
+### Conversion Redundancy & Edge GA4 Dual-Dispatch
 
-To guarantee that high-value monetary conversions are never lost during server outages or network partitions, `micro-attribution` supports three layers of redundancy:
+To guarantee that high-value monetary conversions are never lost during server outages or network partitions, `micro-attribution` provides three coordinated layers of redundancy:
 
-1. **Secondary Failover Endpoint**: If the primary ingestion server returns a 5xx error or encounters network dropouts, the dispatcher automatically fails over the batch to `fallbackEndpoint` before queuing for exponential backoff.
-2. **Zero-Dependency GA4 Bridge**: Dual-dispatches conversions directly to Google Analytics 4 via `https://www.google-analytics.com/mp/collect` using keepalive fetch or `navigator.sendBeacon`.
-3. **Immediate Conversion Callback**: Executes a local hook (`onConversion`) synchronously or asynchronously as soon as a conversion is captured for local logging, webhooks, or secondary storage.
+1. **Secondary Failover Endpoint**: If the primary ingestion server returns a 5xx error or encounters network dropouts, the client dispatcher automatically fails over the batch to `fallbackEndpoint` before queuing for exponential backoff.
+2. **Immediate Conversion Callback**: Executes a local hook (`onConversion`) synchronously or asynchronously as soon as a conversion is captured for local logging, webhooks, or secondary queues.
+3. **Zero-Dependency GA4 Edge Bridge**: Dual-dispatches conversions directly to Google Analytics 4 via `https://www.google-analytics.com/mp/collect` using secure edge or backend environment variables.
+
+> [!IMPORTANT]
+> **Security Architecture Mandate**: Google Analytics 4 Measurement Protocol requires an `api_secret`. Google strictly mandates that `api_secret` must **never** be exposed in public client-side browser JavaScript (which would allow malicious third parties to spam or poison your GA4 property). The GA4 bridge submodule (`micro-attribution/ga4`) is specifically architected for the **Universal Edge Collector** (Cloudflare Workers, Vercel Edge, Deno, Node.js) or private backends where environment secrets remain safely protected.
+
+#### 1. Safe Client Browser Configuration
+
+In public web browsers, configure dual endpoint failover and local conversion callbacks without exposing backend secrets:
 
 ```typescript
 import { MicroAttribution } from "micro-attribution/client";
@@ -346,17 +353,10 @@ import { MicroAttribution } from "micro-attribution/client";
 const tracker = await MicroAttribution.init({
   endpoint: "https://telemetry-primary.yourdomain.com/v1/events",
   redundancy: {
-    // 1. Failover endpoint invoked if primary returns 5xx
+    // 1. Failover endpoint invoked automatically if primary server returns 5xx
     fallbackEndpoint: "https://telemetry-backup.yourdomain.com/v1/events",
 
-    // 2. Opt-in direct GA4 dual-dispatch (zero external dependencies)
-    ga4: {
-      measurementId: "G-XXXXXXXXXX",
-      apiSecret: "your_mp_api_secret",
-      forwardPageviews: false, // Set to true to also mirror pageviews
-    },
-
-    // 3. Local callback for immediate external dispatch or logging
+    // 2. Local hook for immediate in-page logging or custom webhooks
     onConversion: (event) => {
       console.log("High-priority conversion recorded:", event.payload);
     },
@@ -364,14 +364,47 @@ const tracker = await MicroAttribution.init({
 });
 ```
 
-Standalone GA4 dispatch is also available as an independent submodule (< 1.5 KB min+gzip):
+#### 2. Edge Collector GA4 Dual-Dispatch (Secrets Kept Secure)
+
+On your edge ingestion layer (Cloudflare Workers, Vercel Edge, or Node.js), route incoming conversions to GA4 where `GA4_API_SECRET` remains strictly confidential:
+
+```typescript
+import { handleEdgeRequest } from "micro-attribution/edge";
+import { sendToGA4 } from "micro-attribution/ga4";
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    return handleEdgeRequest(request, {
+      pepper: env.PEPPER_SECRET,
+      onBatch: async (events, context) => {
+        // Forward high-priority conversions to GA4 Measurement Protocol
+        const conversions = events.filter((e) => e.type === "conversion");
+        if (conversions.length > 0) {
+          await sendToGA4(conversions, {
+            measurementId: env.GA4_MEASUREMENT_ID,
+            apiSecret: env.GA4_API_SECRET, // Protected edge secret
+          });
+        }
+
+        // Persist to primary analytics warehouse (e.g. ClickHouse, BigQuery)
+        await env.ANALYTICS_DB.insert(events);
+      },
+    });
+  },
+};
+```
+
+#### 3. Standalone Server-Side Dispatch
+
+The GA4 bridge is also available as a standalone, zero-dependency submodule (< 1.5 KB min+gzip) for serverless handlers or background jobs:
 
 ```typescript
 import { sendToGA4 } from "micro-attribution/ga4";
 
-await sendToGA4(conversionEvent, {
-  measurementId: "G-XXXXXXXXXX",
-  apiSecret: "your_mp_api_secret",
+// Run in Node.js, AWS Lambda, or background workers
+await sendToGA4(conversionEvents, {
+  measurementId: process.env.GA4_MEASUREMENT_ID!,
+  apiSecret: process.env.GA4_API_SECRET!, // Kept securely on server
 });
 ```
 

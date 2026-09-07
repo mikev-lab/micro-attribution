@@ -198,7 +198,15 @@ Computes randomized sleep interval: $t_{\text{sleep}} \sim \mathcal{U}(0, \min(M
 
 ## 8. GA4 Measurement Protocol Bridge (`micro-attribution/ga4`)
 
-Zero-dependency integration for direct client-to-Google Analytics 4 forwarding: `https://www.google-analytics.com/mp/collect`.
+Zero-dependency integration for direct HTTP conversion forwarding to Google Analytics 4 Measurement Protocol: `https://www.google-analytics.com/mp/collect`.
+
+> [!IMPORTANT]
+> **Security Architecture Mandate**: Google Analytics 4 Measurement Protocol requires an `api_secret`. Google strictly mandates that `api_secret` must **never** be exposed in public client-side browser JavaScript. Doing so allows third parties to spam or poison your GA4 property with fraudulent traffic.
+>
+> The `micro-attribution/ga4` submodule is architected for execution within secure environments where secrets remain protected:
+> - **Universal Edge Collector**: Cloudflare Workers, Vercel Edge Functions, Deno.
+> - **Server & Serverless Backends**: Node.js, AWS Lambda, Fastify, Express.
+> - **Private Internal Clients**: Authenticated CLI tools and server-to-server pipelines.
 
 ### `sendToGA4`
 Dispatches one or more telemetry events directly to GA4.
@@ -212,7 +220,7 @@ function sendToGA4(
 
 #### `GA4ForwardingOptions` Interface
 - `measurementId: string` (required): Google Analytics 4 Measurement ID (e.g. `G-XXXXXXXXXX`).
-- `apiSecret: string` (required): API Secret generated in GA4 Admin > Data Streams > Measurement Protocol.
+- `apiSecret: string` (required): API Secret generated in GA4 Admin > Data Streams > Measurement Protocol. **Must be provided via secure server or edge environment variables, never hardcoded in client browser bundles.**
 - `forwardPageviews?: boolean` (default: `false`): Forwards pageview events as `page_view`.
 - `clientId?: string`: Override client_id (defaults to visitor token or monotonic event ID).
 - `debug?: boolean` (default: `false`): When true, hits `/debug/mp/collect` for validation.

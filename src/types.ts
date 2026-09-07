@@ -339,11 +339,20 @@ export interface CampaignInfo {
 /**
  * Configuration for forwarding conversions to Google Analytics 4 Measurement Protocol.
  * Uses native zero-dependency HTTP requests to https://www.google-analytics.com/mp/collect.
+ *
+ * Security Note: Designed for execution on Edge Collectors (Cloudflare Workers, Vercel Edge)
+ * or secure server runtimes. Google Measurement Protocol apiSecret must NEVER be bundled
+ * into public client-side browser JavaScript.
  */
 export interface GA4ForwardingOptions {
   /** Google Analytics 4 Measurement ID (e.g. 'G-XXXXXXXXXX') */
   measurementId: string;
-  /** Google Analytics 4 API Secret generated in Admin > Data Streams > Measurement Protocol */
+  /**
+   * Google Analytics 4 API Secret generated in Admin > Data Streams > Measurement Protocol.
+   *
+   * Security Mandate: Must be provided via secure server or edge environment variables
+   * and never hardcoded in public client browser bundles.
+   */
   apiSecret: string;
   /** Whether to forward pageviews in addition to conversions (default: false) */
   forwardPageviews?: boolean;
@@ -359,7 +368,13 @@ export interface GA4ForwardingOptions {
 export interface RedundancyOptions {
   /** Secondary backup HTTP endpoint used if the primary endpoint experiences an outage */
   fallbackEndpoint?: string;
-  /** Optional zero-dependency GA4 Measurement Protocol bridge */
+  /**
+   * Optional zero-dependency GA4 Measurement Protocol bridge.
+   *
+   * Security Warning: In public browser applications, do not provide apiSecret in client bundles.
+   * Configure GA4 dual-dispatch on your Edge Collector (Cloudflare Workers, Vercel Edge, Node.js)
+   * or server runtime via `sendToGA4()` or `handleEdgeRequest()`.
+   */
   ga4?: GA4ForwardingOptions;
   /** Optional callback invoked immediately whenever a high-priority conversion is recorded */
   onConversion?: (event: QueuedEvent) => Promise<void> | void;

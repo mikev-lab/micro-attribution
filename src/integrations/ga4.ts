@@ -4,6 +4,11 @@
  * Dispatches conversion events and pageviews directly to GA4 Measurement Protocol:
  * https://www.google-analytics.com/mp/collect
  *
+ * Security Architecture:
+ * Designed for execution in Edge Collectors (Cloudflare Workers, Vercel Edge, Deno)
+ * and secure server runtimes (Node.js). Per Google requirements, apiSecret must
+ * NEVER be exposed in public client-side browser JavaScript.
+ *
  * Features:
  * 1. Automatic mapping of conversion events to standard GA4 'purchase' events.
  * 2. Attribution preservation: forwards campaign, source, medium, and custom properties.
@@ -217,6 +222,10 @@ export function buildGA4Payload(
 
 /**
  * Dispatches events directly to the Google Analytics 4 Measurement Protocol endpoint.
+ *
+ * Security Mandate:
+ * Designed for invocation on the Edge Collector or backend services where apiSecret
+ * remains confidential. Never bundle apiSecret into public browser client code.
  *
  * @param events - Event or array of events to forward to GA4.
  * @param options - GA4 forwarding configuration.

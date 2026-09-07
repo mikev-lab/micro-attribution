@@ -207,24 +207,34 @@ const tracker = await MicroAttribution.init({
 });
 ```
 
-### 2. Zero-Dependency GA4 Dual-Dispatch
-Mirror high-value conversion events directly to Google Analytics 4 via Measurement Protocol without importing `gtag.js` or external third-party scripts:
+### 2. Edge GA4 Dual-Dispatch (Server & Edge Secrets)
+
+Mirror high-value conversion events directly to Google Analytics 4 via Measurement Protocol without importing `gtag.js` or external third-party scripts.
+
+> [!IMPORTANT]
+> **Security Note**: Never expose `apiSecret` in public browser code. Dual-dispatch should be executed on the Edge Collector (Cloudflare Workers, Vercel Edge, Node.js) where secret keys remain protected in environment variables:
 
 ```typescript
-const tracker = await MicroAttribution.init({
-  endpoint: "https://primary-telemetry.example.com/collect",
-  redundancy: {
-    ga4: {
-      measurementId: "G-XXXXXXXXXX",
-      apiSecret: "your_mp_api_secret",
-      forwardPageviews: false, // Set to true to also mirror page_view events
-    },
-    onConversion: (event) => {
-      // Local immediate hook: e.g. send to internal monitoring or indexed logging
-      console.log("Conversion dual-dispatched:", event.payload);
-    },
+import { handleEdgeRequest } from "micro-attribution/edge";
+import { sendToGA4 } from "micro-attribution/ga4";
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    return handleEdgeRequest(request, {
+      pepper: env.PEPPER_SECRET,
+      onBatch: async (events, context) => {
+        // Forward high-priority conversions to GA4 Measurement Protocol
+        const conversions = events.filter((e) => e.type === "conversion");
+        if (conversions.length > 0) {
+          await sendToGA4(conversions, {
+            measurementId: env.GA4_MEASUREMENT_ID,
+            apiSecret: env.GA4_API_SECRET, // Safely stored in edge environment
+          });
+        }
+      },
+    });
   },
-});
+};
 ```
 
 ---
